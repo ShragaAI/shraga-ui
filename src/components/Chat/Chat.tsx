@@ -11,56 +11,24 @@ import { green } from "@mui/material/colors";
 import { Button } from "@mui/material";
 
 import classNames from "classnames";
-import { Chat as ChatType, Message, RetrievalResult, useAppContext } from "../../contexts/AppContext";
+import { Chat as ChatType, useAppContext } from "../../contexts/AppContext";
 import { useThemeContext } from "../../contexts/ThemeContext";
 import { isDataEmpty } from "../../utils/commonUtils";
 import ShowReference from "../Icons/ShowReference";
 import ChatReference from "./ChatReference";
 import FeedbackButtons from "./FeedbackButtons";
 import JSONViewer from "./JSONViewer";
-import MapWidget, { MapMarker } from "./Maps/MapWidget";
 import PayloadViewer from "./PayloadViewer";
 
-type MarkerWithCoordinates = RetrievalResult & { extra: { coordinates: [number, number] } };
-
-const hasValidCoordinates = (marker: RetrievalResult): marker is MarkerWithCoordinates => {
-  return (
-    marker.extra !== undefined &&
-    marker.extra !== null &&
-    marker.extra.coordinates !== undefined &&
-    Array.isArray(marker.extra.coordinates) &&
-    marker.extra.coordinates.length === 2 &&
-    typeof marker.extra.coordinates[0] === 'number' &&
-    typeof marker.extra.coordinates[1] === 'number'
-  );
-};
-
-const getMarkers = (message: Message) : MapMarker[] => {
-  let markers: MapMarker[] | RetrievalResult[] = [];
-  if (message.payload.map_points && message.payload.map_points.length > 0) {
-    markers = message.payload.map_points;
-  } else if (message.retrieval_results && message.retrieval_results.length > 0) {
-    markers = message.retrieval_results;
-  }
-
-  return markers
-    .filter(hasValidCoordinates)
-    .map((result: MarkerWithCoordinates) => ({
-      position: result.extra?.coordinates ?? [],
-      title: result.title,
-      risk_level: result.extra.risk_level ?? '',
-      date: result.date ?? '',
-      link: result.link ?? '',
-      incident_type: result.extra.incident_type ?? ''
-    }));
+export interface ChatProps { 
+  readOnly?: boolean, 
+  chatData?: ChatType
 }
-
-export type ChatProps = { readOnly?: boolean, chatData?: ChatType };
 
 export default function Chat({ readOnly = false, chatData }: ChatProps) {
   const { configs, selectedChat, submitFeedback, chatUpdated, setChatUpdated } =
     useAppContext();
-  const { theme, setChatBackground } = useThemeContext();
+  const { setChatBackground } = useThemeContext();
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -149,23 +117,6 @@ export default function Chat({ readOnly = false, chatData }: ChatProps) {
                     )}
                   </div>
                   <div dir="auto" className="flex-1 p-2 w-full">
-                    {message.payload?.routing?.show_map ? (
-                      (() => {
-                        const markers = getMarkers(message);
-                        return markers.length > 0 ? (
-                          <MapWidget
-                            markers={markers}
-                            isDarkMode={theme === 'dark'}
-                            incidentTypes={message.payload.routing.incident_types}
-                            dateRange={{
-                                start: message.payload.routing.timerange.from_,
-                                end: message.payload.routing.timerange.to
-                            }}
-                            locations={message.payload.routing.locations}
-                          />
-                        ) : null;
-                      })()
-                    ) : null}
 
                     <ReactMarkdown
                       className="break-words whitespace-pre-wrap"
