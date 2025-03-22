@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Chat as ChatType, Feedback, Message } from "../../contexts/AppContext";
+import { useChatComponent } from "../../contexts/ChatContext";
 
 import { CircularProgress } from "@mui/material";
 import Pagination from '@mui/material/Pagination';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbDownOffAlt from '@mui/icons-material/ThumbDownOffAlt';
-
-import Chat from "../Chat/Chat";
 
 interface ChatHistoryProps {
     isLoading: boolean;
@@ -27,6 +26,7 @@ export const ChatHistory = ({
     flows,
     changePage,
 } : ChatHistoryProps) => {
+    const { ChatComponent } = useChatComponent();
     const [isSliderOpen, setIsSliderOpen] = useState(false);
     const [shouldAnimate, setShouldAnimate] = useState(false);
     const [selectedChatPosition, setSelectedChatPosition] = useState(0);
@@ -168,7 +168,7 @@ export const ChatHistory = ({
                                                 {groupTitle}
                                             </div>
                                             {groupList.map((chatItem: ChatType) => {
-                                                const flow = flows?.find(f => f.id === chatItem.flow.id);
+                                                const flow = flows?.find(f => f.id === chatItem.flow_id);
                                                 const feedback = countFeedback(chatItem.messages);
                                                 return (
                                                     <li
@@ -247,9 +247,9 @@ export const ChatHistory = ({
                     </div>
 
                     <div className="flex-1 p-6 min-h-0 overflow-y-auto">
-                        <Chat 
+                        <ChatComponent 
                             readOnly={true} 
-                            chatData={selectedChat}
+                            chatData={selectedChat || undefined}
                         />
                     </div>
                 </div>

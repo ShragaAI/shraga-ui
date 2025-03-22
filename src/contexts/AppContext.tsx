@@ -78,10 +78,12 @@ export type Message = {
 };
 
 export type Chat = {
+  chat_id?: string;
   id: string;
   user_id?: string;
   draft?: boolean;
   flow: Flow;
+  flow_id?: string;
   timestamp: Date;
   messages: Message[];
 };
@@ -244,6 +246,7 @@ export default function AppProvider({ children }: AppProviderProps) {
       id: uuid(),
       draft: true,
       flow: flow,
+      flow_id: flow.id,
       messages: [],
       timestamp: new Date(),
     };

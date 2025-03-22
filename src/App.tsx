@@ -8,7 +8,6 @@ import { CircularProgress } from "@mui/material";
 
 import classNames from "classnames";
 import Analytics from "./components/Analytics/Analytics";
-import Chat from "./components/Chat/Chat";
 import ChatInput from "./components/Chat/ChatInput";
 import Header from "./components/Header";
 import Login from "./components/Login";
@@ -18,6 +17,7 @@ import Sidebar from "./components/Sidebar";
 import AppProvider, { useAppContext } from "./contexts/AppContext";
 import { useAuthContext } from "./contexts/AuthContext";
 import { useThemeContext } from "./contexts/ThemeContext";
+import { useChatComponent } from "./contexts/ChatContext";
 import AnalyticsLayout from "./layouts/AnalyticsLayout";
 
 interface ProtectedRouteProps {
@@ -25,11 +25,7 @@ interface ProtectedRouteProps {
   requiredRoles?: string[];
 }
 
-interface AppProps {
-  ChatComponent?: React.ComponentType;
-}
-
-function App(props: AppProps) {
+function App() {
   const { user, isLoading } = useAuthContext();
   const { chatBackground, theme } = useThemeContext();
 
@@ -43,6 +39,7 @@ function App(props: AppProps) {
 
   const Layout = () => {
     const { configs, isSidebarOpen, toggleSidebar } = useAppContext();
+    const { ChatComponent } = useChatComponent();
     const defaultFlow = configs?.default_flow;
     const sessionModal = configs?.list_flows || (Array.isArray(defaultFlow) && defaultFlow.length > 1) ? <SessionModal /> : null;
 
@@ -53,8 +50,6 @@ function App(props: AppProps) {
         </div>
       );
     }
-
-    const ChatCls = props.ChatComponent || Chat;
 
     return (
       <div className="relative flex h-full w-full">
@@ -68,7 +63,7 @@ function App(props: AppProps) {
             <div className="flex flex-1 justify-center px-2">
               <div className="w-full flex flex-col max-w-[768px]">
                 <div className="flex-1 overflow-auto">
-                  <ChatCls />
+                  <ChatComponent />
                 </div>
                 <ChatInput />
               </div>
