@@ -12,21 +12,11 @@ interface PercentilesChartProps {
     color: string;
 }
 
-type Step = {
-    step: string;
-    total_count: number;
+type AnalyticsData = {
     input_tokens: Record<string, number>;
     output_tokens: Record<string, number>;
     latency: Record<string, number>;
-};
-
-type AnalyticsData = {
-    steps: Step[];
-    feedback: {
-        none: number;
-        positive: number;
-        negative: number;
-    }
+    time_took: Record<string, number>;
 };
 
 const PercentilesChart = ({ data, title, color } : PercentilesChartProps) => {
@@ -106,36 +96,31 @@ export const Statistics = ({ startDate, endDate }: { startDate: Dayjs | null; en
 
     return (
         <div className="p-6 rounded-lg bg-white w-full grow space-y-8 dark:bg-primary-dk min-w-[768px]">
-            {data?.steps && data?.steps.length ? (
-                <>
-                    {data?.steps.map((step: any) => (
-                        <div className="flex flex-col gap-y-10">
-                            <h2 className="capitalize">{step.step}</h2>
-                            <PercentilesChart 
-                                data={step.latency} 
-                                title="Latency Percentiles"
-                                color="#8884d8"
-                            />
+            <div className="flex flex-col gap-y-10">
+                <PercentilesChart 
+                    data={data.latency} 
+                    title="Latency Percentiles"
+                    color="#8884d8"
+                />
 
-                            <PercentilesChart 
-                                data={step.input_tokens} 
-                                title="Input Tokens Percentiles"
-                                color="#82ca9d"
-                            />
-                            
-                            <PercentilesChart 
-                                data={step.output_tokens} 
-                                title="Output Tokens Percentiles"
-                                color="#ffc658"
-                            />
-                        </div>
-                    ))}
-                </>
-            ) : (
-                <div className="flex flex-col gap-y-16">
-                    <div>No chat statistics</div>
-                </div>
-            )}
+                <PercentilesChart 
+                    data={data.input_tokens} 
+                    title="Input Tokens Percentiles"
+                    color="#82ca9d"
+                />
+                
+                <PercentilesChart 
+                    data={data.output_tokens} 
+                    title="Output Tokens Percentiles"
+                    color="#ffc658"
+                />
+                
+                <PercentilesChart 
+                    data={data.time_took} 
+                    title="Time Took Percentiles"
+                    color="#adbad0"
+                />
+            </div>
         </div>
     );
 };
