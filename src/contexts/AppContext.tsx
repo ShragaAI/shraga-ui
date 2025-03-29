@@ -138,7 +138,7 @@ type AppProviderProps = {
   children: ReactElement;
 };
 
-const transformPreferences = (preferences?: Record<string, any>): Record<string, any> => {
+export const transformPreferences = (preferences?: Record<string, any>): Record<string, any> => {
   if (!preferences) return {};
   
   return Object.entries(preferences).reduce((result, [key, value]) => {
@@ -173,16 +173,28 @@ export default function AppProvider({ children }: AppProviderProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const selectedChat = useMemo<Chat | null>(
-    () => chats.find((c) => c.id === selectedChatId) ?? null,
-    [chats.map((c) => c.id), selectedChatId]
+    () => {
+      const chat = chats.find((c) => c.id === selectedChatId) ?? null;
+      if (chat && flows) {
+        const flow = flows.find((f) => f.id === chat.flow.id);
+        if (flow) {
+          return {
+            ...chat,
+            flow: {
+              ...chat.flow,
+              preferences: transformPreferences(flow.preferences)
+            }
+          };
+        }
+      }
+      
+      return chat;
+    },
+    [chats.map((c) => c.id), selectedChatId, flows]
   );
 
   const canReplyToBot = useMemo(() => {
-    const lastBotMessage = selectedChat?.messages
-      .filter((m) => (m.position ?? 0) % 2 === 1)
-      .pop();
-    if (!lastBotMessage) return true;
-    return lastBotMessage.allowReply ?? false;
+    return selectedChat?.flow.preferences?.history_window > 0
   }, [selectedChat?.messages]);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -204,6 +216,11 @@ export default function AppProvider({ children }: AppProviderProps) {
         id: chatHistory[0].flow.id,
         description: "",
       };
+
+      const flow = flows.find((flow) => flow.id === startFlow.id);
+      if (flow) {
+        startFlow.preferences = transformPreferences(flow.preferences);
+      }
       createChat(startFlow);
       return;
     }

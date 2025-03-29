@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { useLocation } from "react-router-dom";
 import remarkGfm from "remark-gfm";
-import { Chat, Flow, useAppContext } from "../contexts/AppContext";
+import { Chat, Flow, useAppContext, transformPreferences } from "../contexts/AppContext";
 import { groupChatsByDate } from "../utils/formatChatsDate.ts";
 import SidebarHeaderControls from "./SidebarHeaderControls";
 
@@ -47,6 +47,11 @@ export default function Sidebar({
           id: flowId,
           description: "Default Flow",
         };
+
+        const flow = flows?.find((flow) => flow.id === flowId);
+        if (flow) {
+          simpleFlow.preferences = transformPreferences(flow.preferences);
+        }
 
         createChat(simpleFlow);
       }

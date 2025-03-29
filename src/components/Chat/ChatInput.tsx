@@ -157,7 +157,7 @@ export default function ChatInput({ }: ChatInputProps) {
           inputRef={inputRef}
           variant="standard"
           placeholder={configs?.question_line || `Ask ${configs?.name || 'Shraga'}`}
-          className="relative border border-[#2e2e2e] rounded-3xl z-5 bg-white"
+          className="relative border border-[#2e2e2e] rounded-3xl z-5 bg-white dark:bg-[#2e2e2e]"
           fullWidth
           multiline
           dir={textDirection}

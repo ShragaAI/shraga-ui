@@ -158,33 +158,36 @@ export default function Chat({ readOnly = false, chatData }: ChatProps) {
                       {message.text && message.text.split(/\n{2,}/).join("\n")}
                     </ReactMarkdown>
 
-                    <div className="flex space-x-2">
-                      {!isDataEmpty(message.trace) && (
-                        <div className="pt-2">
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<DataObjectOutlinedIcon />}
-                            onClick={() => setTrace(message.trace ?? {})}
-                          >
-                            Trace
-                          </Button>
-                        </div>
-                      )}
-                      {!isDataEmpty(message.payload) && (
-                        <div className="pt-2">
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<DataObjectOutlinedIcon />}
-                            className="pt-2"
-                            onClick={() => setPayload(message.payload)}
-                          >
-                            Payload
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                    {import.meta.env.DEV && (
+                      <div className="flex space-x-2">
+                        {!isDataEmpty(message.trace) && (
+                          <div className="pt-2">
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<DataObjectOutlinedIcon />}
+                              onClick={() => setTrace(message.trace ?? {})}
+                            >
+                              Trace
+                            </Button>
+                          </div>
+                        )}
+                        {!isDataEmpty(message.payload) && (
+                          <div className="pt-2">
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<DataObjectOutlinedIcon />}
+                              className="pt-2"
+                              onClick={() => setPayload(message.payload)}
+                            >
+                              Payload
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                   </div>
                 </div>
                 <div className="flex p-2 mb-2 gap-3 items-center opacity-85 border-t dark:border-t-[#2e2e2e]">
