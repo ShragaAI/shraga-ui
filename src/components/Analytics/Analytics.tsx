@@ -37,11 +37,12 @@ export const CustomTabPanel: React.FC<CustomTabPanelProps> = ({ children, value,
 
 export default function Analytics() {
     const { flows, setAppSection, setHeaderToolbar } = useAppContext();
-    const [page, setPage] = useState(1);
+    const [displayCount, setDisplayCount] = useState(10);
     const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().subtract(7, 'day'));
     const [endDate, setEndDate] = useState<Dayjs | null>(null);
     const [filteredChats, setFilteredChats] = useState<Chat[]>([]);
-    const itemsPerPage = 20;
+    const [loadingMoreChats, setLoadingMoreChats] = useState(false);
+    const itemsPerPage = 10;
 
     const [tabValue, setTabValue] = useState(() => {
         const savedTab = sessionStorage.getItem('analyticsTab');
@@ -137,16 +138,24 @@ export default function Analytics() {
         });
 
         setFilteredChats(filtered);
-        setPage(1);
+        setDisplayCount(itemsPerPage);
     }, [chats, startDate, endDate]);
 
-    const paginatedChats = filteredChats
-        .slice((page - 1) * itemsPerPage, page * itemsPerPage)
+    const loadMoreChats = () => {
+        setLoadingMoreChats(true);
+        setTimeout(() => {
+            setDisplayCount(prevCount => prevCount + itemsPerPage);
+            setLoadingMoreChats(false);
+        }, 300);
+    };
+
+    const displayedChats = filteredChats
+        .slice(0, displayCount)
         .sort((a, b) => {
             return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
         });
-    const groupedChats = groupChatsByDate(paginatedChats);
-    const pagesNum = Math.ceil(filteredChats.length / itemsPerPage);
+    const groupedChats = groupChatsByDate(displayedChats);
+    const hasMoreChats = displayCount < filteredChats.length;
 
     return (
         <div className="space-y-4 flex flex-col pt-24 pb-10 min-h-screen -mt-14 items-center">
@@ -184,10 +193,10 @@ export default function Analytics() {
                     isLoading={isLoading}
                     filteredChats={filteredChats}
                     groupedChats={groupedChats}
-                    pagesNum={pagesNum}
-                    page={page}
                     flows={flows || []}
-                    changePage={(_: React.ChangeEvent<unknown>, newPage: number) => setPage(newPage)}
+                    loadMoreChats={loadMoreChats}
+                    loadingMoreChats={loadingMoreChats}
+                    hasMoreChats={hasMoreChats}
                 />
             </CustomTabPanel>
 
