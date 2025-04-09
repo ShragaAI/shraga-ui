@@ -197,7 +197,7 @@ export default function AppProvider({ children }: AppProviderProps) {
 
   const canReplyToBot = useMemo(() => {
     return selectedChat?.flow.preferences?.history_window > 0
-  }, [selectedChat?.messages]);
+  }, [selectedChat]);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSessionEditorOpen, setIsSessionEditorOpen] = useState(false);

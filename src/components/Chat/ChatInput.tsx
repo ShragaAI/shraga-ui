@@ -140,7 +140,7 @@ export default function ChatInput({ }: ChatInputProps) {
           </span>
         </div>
       )}
-      {!canReplyToBot && (
+      {selectedChat && !canReplyToBot && (
         <div className="flex items-center space-x-2 py-3 pl-2 rounded-xl bg-white dark:bg-[#2e2e2e]">
           <WarningIcon fontSize="small" />
           <span className="opacity-70">Follow up questions are not supported</span>
