@@ -25,9 +25,60 @@ interface ProtectedRouteProps {
   requiredRoles?: string[];
 }
 
+const Layout = () => {
+  const { configs, isSidebarOpen, toggleSidebar } = useAppContext();
+  const { ChatComponent } = useChatComponent();
+  const { chatBackground, theme } = useThemeContext(); 
+  const defaultFlow = configs?.default_flow;
+  const sessionModal = configs?.list_flows || (Array.isArray(defaultFlow) && defaultFlow.length > 1) ? <SessionModal /> : null;
+
+  if (!configs) {
+    return (
+      <div className="flex h-full justify-center items-center">
+        <CircularProgress />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex h-full w-full">
+      <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <div className="relative flex-1">
+        <main className="flex flex-col flex-1 h-full overflow-auto z-10">
+          <Header
+            isSidebarOpen={isSidebarOpen}
+            toggleSidebar={toggleSidebar}
+          />
+          <div className="flex flex-1 justify-center px-2">
+            <div className="w-full flex flex-col max-w-[768px]">
+              <div className="flex-1 overflow-auto">
+                <ChatComponent />
+              </div>
+              <ChatInput />
+            </div>
+          </div>
+        </main>
+        <div
+          className={classNames("absolute inset-0 mt-14 z-[-1]", {
+            "bg-cover bg-center": !!chatBackground,
+          })}
+          style={{
+            backgroundImage: chatBackground
+              ? `url(${chatBackground})`
+              : undefined,
+            filter: theme === "dark" ? "invert(1)" : undefined,
+          }}
+        />
+      </div>
+
+      {sessionModal}
+      <SettingsModal />
+    </div>
+  );
+};
+
 function App() {
   const { user, isLoading } = useAuthContext();
-  const { chatBackground, theme } = useThemeContext();
 
   if (isLoading) {
     return (
@@ -36,57 +87,6 @@ function App() {
       </div>
     );
   }
-
-  const Layout = () => {
-    const { configs, isSidebarOpen, toggleSidebar } = useAppContext();
-    const { ChatComponent } = useChatComponent();
-    const defaultFlow = configs?.default_flow;
-    const sessionModal = configs?.list_flows || (Array.isArray(defaultFlow) && defaultFlow.length > 1) ? <SessionModal /> : null;
-
-    if (!configs) {
-      return (
-        <div className="flex h-full justify-center items-center">
-          <CircularProgress />
-        </div>
-      );
-    }
-
-    return (
-      <div className="relative flex h-full w-full">
-        <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-        <div className="relative flex-1">
-          <main className="flex flex-col flex-1 h-full overflow-auto z-10">
-            <Header
-              isSidebarOpen={isSidebarOpen}
-              toggleSidebar={toggleSidebar}
-            />
-            <div className="flex flex-1 justify-center px-2">
-              <div className="w-full flex flex-col max-w-[768px]">
-                <div className="flex-1 overflow-auto">
-                  <ChatComponent />
-                </div>
-                <ChatInput />
-              </div>
-            </div>
-          </main>
-          <div
-            className={classNames("absolute inset-0 mt-14 z-[-1]", {
-              "bg-cover bg-center": !!chatBackground,
-            })}
-            style={{
-              backgroundImage: chatBackground
-                ? `url(${chatBackground})`
-                : undefined,
-              filter: theme === "dark" ? "invert(1)" : undefined,
-            }}
-          />
-        </div>
-
-        {sessionModal}
-        <SettingsModal />
-      </div>
-    );
-  };
 
   const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps) => {
     if (!user) {
