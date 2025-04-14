@@ -34,7 +34,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "prepare": "npm run build",
+    "prepare": "husky",
     "release": "semantic-release"
   },
   "dependencies": {
@@ -65,6 +65,8 @@
   },
   "devDependencies": {
     "@babel/plugin-syntax-import-assertions": "^7.26.0",
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^11.0.1",
@@ -83,6 +85,7 @@
     "eslint": "^9.22.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
+    "husky": "^9.1.7",
     "postcss": "^8.4.39",
     "semantic-release": "^24.2.3",
     "tailwindcss": "^3.4.4",
