@@ -12,7 +12,8 @@ interface oAuthKeys {
 }
 
 export default function Login() {
-  const { login, loginMethods, user } = useAuthContext();
+  const { login, user, getLoginMethods } = useAuthContext();
+  const [loginMethods, setLoginMethods] = useState<LoginMethod[] | undefined>();
   const [showEmailLogin, setShowEmailLogin] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [loginProgress, setLoginProgress] = useState(false);
@@ -31,6 +32,13 @@ export default function Login() {
   };
 
   useEffect(() => {
+    const fetchLoginMethods = async () => {
+      const methods = await getLoginMethods();
+      setLoginMethods(methods);
+    };
+    
+    fetchLoginMethods();
+
     const getOAuthClientIds = async () => {
       try {
         const response = await fetch(`/oauth/keys`, {
