@@ -6,7 +6,6 @@ import {
   useEffect,
 } from "react";
 
-import useFetch from "../hooks/useFetch";
 import { getAuthCookie, setAuthCookie } from "../utils/auth";
 
 type User = {
@@ -27,7 +26,6 @@ export interface LoginInputs {
 }
 
 type AuthContextData = {
-  loginMethods?: [LoginMethod];
   user: User | undefined;
   appVersion?: string;
   isLoading: boolean;
@@ -39,6 +37,7 @@ type AuthContextData = {
     }
   ) => Promise<void>;
   logout: () => void;
+  getLoginMethods: () => Promise<LoginMethod[] | undefined>;
 };
 
 type AuthProviderProps = {
@@ -59,8 +58,6 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const [appVersion, setAppVersion] = useState<string | undefined>();
   const [user, setUser] = useState<User>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  const { data: loginMethods } = useFetch<[LoginMethod]>("/auth/login_methods");
 
   useEffect(() => {
     if (window.location.hash.includes("jwt")) {
@@ -169,15 +166,35 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     setAuthCookie(undefined);
   };
 
+  const getLoginMethods = async (): Promise<[LoginMethod] | undefined> => {
+    try {
+      const response = await fetch("/auth/login_methods", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch login methods");
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching login methods:", error);
+      return undefined;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
-        loginMethods,
         user,
         appVersion,
         isLoading,
         login,
         logout,
+        getLoginMethods,
       }}
     >
       {children}

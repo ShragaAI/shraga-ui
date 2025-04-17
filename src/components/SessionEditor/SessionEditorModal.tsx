@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { Button, MenuItem, TextField } from "@mui/material";
 
 import { Flow, useAppContext } from "../../contexts/AppContext";
+import { useChatContext } from "../../contexts/ChatContext";
 import Preferences, { formValidator } from "./Preferences";
 import StyledModal from "../Base/StyledModal";
 
@@ -12,11 +13,10 @@ type SessionEditorModalProps = {};
 export default function SessionEditorModal({}: SessionEditorModalProps) {
   const {
     flows,
-    selectedChat,
-    createChat,
     isSessionEditorOpen,
     setIsSessionEditorOpen,
   } = useAppContext();
+  const { selectedChat, createChat } = useChatContext();
 
   const [draftFlow, setDraftFlow] = useState<Flow | null>(null);
 

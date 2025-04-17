@@ -4,7 +4,8 @@ import { toast } from "react-toastify";
 import { IconButton, Popover } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 
-import { Chat, useAppContext } from "../contexts/AppContext";
+import { Chat } from "../contexts/AppContext";
+import { useChatContext } from "../contexts/ChatContext";
 import { getAuthCookie } from "../utils/auth";
 
 type HistoryItemPopoverProps = {
@@ -12,7 +13,7 @@ type HistoryItemPopoverProps = {
 };
 
 export default function HistoryItemPopover({ chat }: HistoryItemPopoverProps) {
-  const { selectedChat, refreshChatHistory } = useAppContext();
+  const { selectedChat, refreshChatHistory } = useChatContext();
   const [isOpen, setIsOpen] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const anchorEl = useRef<HTMLButtonElement | null>(null);

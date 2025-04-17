@@ -6,6 +6,7 @@ import type { ChatProps } from "./components/Chat";
 
 import { useThemeContext } from "./contexts/ThemeContext";
 import { useAppContext } from "./contexts/AppContext";
+import { useChatContext } from "./contexts/ChatContext";
 import ShowReference from "./components/Icons/ShowReference";
 import ChatReference from "./components/Chat/ChatReference";
 import FeedbackButtons from "./components/Chat/FeedbackButtons";
@@ -19,6 +20,7 @@ export {
     createRoot,
 
     useThemeContext,
+    useChatContext,
     useAppContext,
 
     ShowReference,

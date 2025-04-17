@@ -31,20 +31,30 @@ export interface Chat {
   updated_at: string;
 }
 
+export interface Flow {
+  id: string;
+  description: string;
+  preferences?: Record<string, any>;
+}
+
 export interface AppContextType {
   configs: any;
+  isSidebarOpen?: boolean;
+  toggleSidebar?: () => void;
+}
+
+export interface ChatContextType {
   selectedChat: Chat | null;
   submitFeedback: (chatId: string, messageIndex: number, type: string, comment: string) => void;
   chatUpdated: boolean;
   setChatUpdated: (updated: boolean) => void;
-  isSidebarOpen?: boolean;
-  toggleSidebar?: () => void;
 }
 
 export interface ThemeContextType {
   theme: string;
   toggleTheme: () => void;
   setChatBackground: (url: string) => void;
+  chatBackground?: string;
 }
 
 export const Chat: React.FC<ChatProps>;
@@ -53,11 +63,13 @@ export function createRoot(element: HTMLElement, chatCls?: React.FC<ChatProps>):
 
 export function useThemeContext(): ThemeContextType;
 export function useAppContext(): AppContextType;
+export function useChatContext(): ChatContextType;
+
 export const ShowReference: React.FC<{width?: string, height?: string}>;
 export const ChatReference: React.FC<{retrievalResults: RetrievalResult[]}>;
 export const FeedbackButtons: React.FC<{
   index: number, 
-  submitFeedback: AppContextType['submitFeedback'], 
+  submitFeedback: ChatContextType['submitFeedback'], 
   chat: Chat, 
   message: Message
 }>;

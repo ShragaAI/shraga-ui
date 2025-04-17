@@ -17,7 +17,7 @@ import Sidebar from "./components/Sidebar";
 import AppProvider, { useAppContext } from "./contexts/AppContext";
 import { useAuthContext } from "./contexts/AuthContext";
 import { useThemeContext } from "./contexts/ThemeContext";
-import { useChatComponent } from "./contexts/ChatContext";
+import ChatProvider, { useChatContext } from "./contexts/ChatContext";
 import AnalyticsLayout from "./layouts/AnalyticsLayout";
 
 interface ProtectedRouteProps {
@@ -27,8 +27,9 @@ interface ProtectedRouteProps {
 
 const Layout = () => {
   const { configs, isSidebarOpen, toggleSidebar } = useAppContext();
-  const { ChatComponent } = useChatComponent();
+  const { ChatComponent } = useChatContext();
   const { chatBackground, theme } = useThemeContext(); 
+
   const defaultFlow = configs?.default_flow;
   const sessionModal = configs?.list_flows || (Array.isArray(defaultFlow) && defaultFlow.length > 1) ? <SessionModal /> : null;
 
@@ -77,7 +78,11 @@ const Layout = () => {
   );
 };
 
-function App() {
+interface AppProps {
+  customChatComponent?: React.ComponentType;
+}
+
+function App({ customChatComponent }: AppProps) {
   const { user, isLoading } = useAuthContext();
 
   if (isLoading) {
@@ -108,7 +113,9 @@ function App() {
       path: "/",
       element: (
         <ProtectedRoute>
-          <Layout />
+          <ChatProvider customChatComponent={customChatComponent}>
+            <Layout />
+          </ChatProvider>
         </ProtectedRoute>
       ),
     },

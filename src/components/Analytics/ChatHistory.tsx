@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Chat as ChatType, Feedback, Message } from "../../contexts/AppContext";
-import { useChatComponent } from "../../contexts/ChatContext";
+import { useChatContext } from "../../contexts/ChatContext";
 
 import { CircularProgress } from "@mui/material";
 import Pagination from '@mui/material/Pagination';
@@ -26,7 +26,7 @@ export const ChatHistory = ({
     flows,
     changePage,
 } : ChatHistoryProps) => {
-    const { ChatComponent } = useChatComponent();
+    const { ChatComponent } = useChatContext();
     const [isSliderOpen, setIsSliderOpen] = useState(false);
     const [shouldAnimate, setShouldAnimate] = useState(false);
     const [selectedChatPosition, setSelectedChatPosition] = useState(0);
