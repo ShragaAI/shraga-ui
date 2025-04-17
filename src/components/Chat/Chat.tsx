@@ -12,6 +12,7 @@ import { Button } from "@mui/material";
 
 import classNames from "classnames";
 import { Chat as ChatType, useAppContext } from "../../contexts/AppContext";
+import { useChatContext } from "../../contexts/ChatContext";
 import { useThemeContext } from "../../contexts/ThemeContext";
 import { isDataEmpty } from "../../utils/commonUtils";
 import ShowReference from "../Icons/ShowReference";
@@ -26,8 +27,8 @@ export interface ChatProps {
 }
 
 export default function Chat({ readOnly = false, chatData }: ChatProps) {
-  const { configs, selectedChat, submitFeedback, chatUpdated, setChatUpdated } =
-    useAppContext();
+  const { configs } = useAppContext();
+  const { selectedChat, submitFeedback, chatUpdated, setChatUpdated } = useChatContext();
   const { setChatBackground } = useThemeContext();
 
   const bottomRef = useRef<HTMLDivElement>(null);
