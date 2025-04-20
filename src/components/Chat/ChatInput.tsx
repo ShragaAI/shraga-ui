@@ -7,6 +7,7 @@ import { CircularProgress, IconButton, TextField } from "@mui/material";
 import WarningIcon from "@mui/icons-material/Warning";
 
 import { useAppContext } from "../../contexts/AppContext";
+import { useChatContext } from "../../contexts/ChatContext";
 
 type ChatInputProps = {};
 
@@ -49,7 +50,9 @@ const WarningMessage = ({ show, inputMaxLength }: { show: boolean, inputMaxLengt
 };
 
 export default function ChatInput({ }: ChatInputProps) {
-  const { configs, canReplyToBot, sendMessage, abortMessage, selectedChat } = useAppContext();
+  const { configs } = useAppContext();
+  const { selectedChat, canReplyToBot, sendMessage, abortMessage } = useChatContext();
+  
   const inputMaxLength = configs?.input_max_length || 1000;
 
   const inputRef = useRef<HTMLInputElement>(null);

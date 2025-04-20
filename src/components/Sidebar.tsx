@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { useLocation } from "react-router-dom";
 import remarkGfm from "remark-gfm";
 import { Chat, Flow, useAppContext, transformPreferences } from "../contexts/AppContext";
+import { useChatContext } from "../contexts/ChatContext";
 import { groupChatsByDate } from "../utils/formatChatsDate.ts";
 import SidebarHeaderControls from "./SidebarHeaderControls";
 
@@ -20,13 +21,9 @@ export default function Sidebar({
   const {
     configs,
     flows,
-    createChat,
-    chats,
-    selectedChat,
-    selectChat,
     setIsSessionEditorOpen,
   } = useAppContext();
-
+  const { createChat, chats, selectedChat, selectChat } = useChatContext();
   const location = useLocation();
   const chatId = location.search.substring(1);
 
