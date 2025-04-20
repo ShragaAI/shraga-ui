@@ -1,3 +1,2 @@
 
-echo "🔍 Commit message file: $1"\
 pnpm commitlint --edit "$1"
