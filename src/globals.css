@@ -85,3 +85,11 @@ h3 {
   height: 15px !important;
   margin: 0px !important;
 }
+
+.chat-message li > p:first-child {
+  margin-top: -23px;
+}
+
+.chat-message li > ul, .chat-message li > ol {
+  margin-top: 10px;
+}
