@@ -133,6 +133,8 @@ export default function ChatInput({ }: ChatInputProps) {
     }
   };
 
+  if (!selectedChat) return null;
+
   return (
     <div className="sticky bottom-0 w-full">
       {loading && (

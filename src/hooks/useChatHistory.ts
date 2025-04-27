@@ -17,22 +17,27 @@ export default function useChatHistory() {
   const { data, error, mutate, isValidating, isLoading } = useSWR<Chat[]>(
     swrKey,
     async () => {
-      const data: any[] = await fetcher("/api/history/", {
-        headers,
-      });
-      const transformedData = data.map((chat) => ({
-        ...chat,
-        id: chat.id || chat.chat_id,
-        flow: {
-          id: chat.messages[0]?.flow_id ?? "n/a",
-        },
-        timestamp: new Date(chat.timestamp),
-        messages: chat.messages.map((message: any) => ({
-          ...message,
-          retrieval_results: message.retrieval_results,
-        })),
-      }));
-      return transformedData;
+      try {
+        const data: any[] = await fetcher("/api/history/", {
+          headers,
+        });
+        const transformedData = data.map((chat) => ({
+          ...chat,
+          id: chat.id || chat.chat_id,
+          flow: {
+            id: chat.messages[0]?.flow_id ?? "n/a",
+          },
+          timestamp: new Date(chat.timestamp),
+          messages: chat.messages.map((message: any) => ({
+            ...message,
+            retrieval_results: message.retrieval_results,
+          })),
+        }));
+        return transformedData;
+      } catch (error) {
+        console.error("Error fetching chat history:", error);
+        return [];
+      }
     },
     {
       revalidateOnFocus: false,
