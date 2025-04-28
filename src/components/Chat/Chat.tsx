@@ -117,7 +117,7 @@ export default function Chat({ readOnly = false, chatData }: ChatProps) {
                       <SmartToyIcon />
                     )}
                   </div>
-                  <div dir="auto" className="flex-1 p-2 w-full">
+                  <div dir="auto" className="flex-1 p-2 w-full overflow-x-auto">
 
                     <ReactMarkdown
                       className="break-words whitespace-pre-wrap"
