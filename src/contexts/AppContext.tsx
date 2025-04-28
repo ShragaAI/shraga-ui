@@ -108,6 +108,7 @@ export const transformPreferences = (preferences?: Record<string, any>): Record<
   if (!preferences) return {};
   
   return Object.entries(preferences).reduce((result, [key, value]) => {
+    result[key] = value;
     if (value && typeof value === 'object' && 'default_value' in value) {
       result[key] = value.default_value;
     }
