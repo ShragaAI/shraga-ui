@@ -75,11 +75,17 @@ export default function ChatInput({ }: ChatInputProps) {
       rtl: textDirection === "rtl",
       onSuccess: () => {
         setLoading(false);
+        if (inputRef.current) {
+          setTimeout(() => inputRef.current?.focus(), 0);
+        }
       },
       onError: (err) => {
         console.error(err);
         toast.error("Failed to send message");
         setLoading(false);
+        if (inputRef.current) {
+          setTimeout(() => inputRef.current?.focus(), 0);
+        }
       },
     });
     // immediately clear
@@ -165,6 +171,7 @@ export default function ChatInput({ }: ChatInputProps) {
           className="relative border border-[#2e2e2e] rounded-3xl z-5 bg-white dark:bg-[#2e2e2e]"
           fullWidth
           multiline
+          autoFocus
           dir={textDirection}
           InputProps={{
             disableUnderline: true,
