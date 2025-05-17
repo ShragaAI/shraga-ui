@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Chat as ChatType, Feedback, Message } from "../../contexts/AppContext";
 import { useChatContext } from "../../contexts/ChatContext";
+import useChatMessages from '../../hooks/useChatMessages';
 
 import { CircularProgress } from "@mui/material";
 import Pagination from '@mui/material/Pagination';
@@ -32,11 +33,23 @@ export const ChatHistory = ({
     const [selectedChatPosition, setSelectedChatPosition] = useState(0);
     const [arrowPosition, setArrowPosition] = useState(0);
     const [isPanelReady, setIsPanelReady] = useState(false);
-    const [selectedChat, setSelectedChat] = useState<ChatType | null>(null);
+    const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+    const [selectedChatBase, setSelectedChatBase] = useState<ChatType | null>(null);
+    const [fullChatData, setFullChatData] = useState<ChatType | null>(null);
     const chatListRef = useRef<HTMLDivElement>(null);
     const chatPanelRef = useRef<HTMLDivElement>(null);
     const previousChatRef = useRef<string | null>(null);
     const selectedChatRef = useRef<HTMLLIElement | null>(null);
+
+    const { data: chatMessages, isLoading: isChatMessagesLoading } = useChatMessages(selectedChatId);
+
+    useEffect(() => {
+        if (!selectedChatBase || !chatMessages) return;
+        setFullChatData({
+            ...selectedChatBase,
+            messages: chatMessages
+        });
+    }, [chatMessages, selectedChatBase]);
 
     const countFeedback = (messages: Message[]) => {
         if (!messages) return { thumbsUp: 0, thumbsDown: 0 };
@@ -55,6 +68,7 @@ export const ChatHistory = ({
         setIsSliderOpen(false);
         setShouldAnimate(true);
         previousChatRef.current = null;
+        setSelectedChatId(null);
     };
 
     useEffect(() => {
@@ -114,7 +128,6 @@ export const ChatHistory = ({
     };
 
     const handleChatPopoverOpen = (event: React.MouseEvent<HTMLLIElement>, chatItem: ChatType) => {
-
         if (chatItem.id === previousChatRef.current) {
             closeChatPanel();
             return;
@@ -127,6 +140,9 @@ export const ChatHistory = ({
         selectedChatRef.current = chatElement;
 
         setIsPanelReady(false);
+        setSelectedChatId(chatItem.id);
+        setSelectedChatBase(chatItem);
+        setFullChatData(null);
 
         if (!isSliderOpen) {
             setShouldAnimate(true);
@@ -135,7 +151,6 @@ export const ChatHistory = ({
             setShouldAnimate(false);
         }
         
-        setSelectedChat(chatItem);
         previousChatRef.current = chatItem.id;
 
         setTimeout(() => {
@@ -226,13 +241,13 @@ export const ChatHistory = ({
                 </div>
             </div>
 
-            {selectedChat && (
+            {selectedChatBase && (
                 <div 
                     ref={chatPanelRef}
                     style={{
                         top: `${selectedChatPosition}px`
                     }}
-                    className={`absolute right-0 w-[35vw] bg-white dark:bg-primary-dk rounded-lg shadow-md dark:shadow-gray-300/10 max-h-[75vh] flex flex-col ${
+                    className={`absolute right-0 w-[35vw] bg-white dark:bg-primary-dk rounded-lg shadow-md dark:shadow-gray-300/10 min-h-[190px] max-h-[75vh] flex flex-col ${
                         shouldAnimate ? "transform transition-transform duration-300 ease-in-out" : ""
                     } ${isSliderOpen ? "translate-x-0" : "translate-x-full"}
                     ${!isPanelReady ? "opacity-0" : "opacity-100"}`}
@@ -247,10 +262,16 @@ export const ChatHistory = ({
                     </div>
 
                     <div className="flex-1 p-6 min-h-0 overflow-y-auto">
-                        <ChatComponent 
-                            readOnly={true} 
-                            chatData={selectedChat || undefined}
-                        />
+                        {isChatMessagesLoading ? (
+                            <div className="flex h-full items-center justify-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                            </div>
+                        ) : (
+                            <ChatComponent 
+                                readOnly={true} 
+                                chatData={fullChatData || undefined}
+                            />
+                        )}
                     </div>
                 </div>
             )}
