@@ -18,7 +18,7 @@ export default function useChatHistory() {
     swrKey,
     async () => {
       try {
-        const data: any[] = await fetcher("/api/history/", {
+        const data: any[] = await fetcher("/api/history/list", {
           headers,
         });
         const transformedData = data.map((chat) => ({
