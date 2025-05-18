@@ -76,6 +76,7 @@ export const FeedbackButtons: React.FC<{
 }>;
 export const JSONViewer: React.FC<{json: any, open: boolean, onClose: () => void}>;
 export const PayloadViewer: React.FC<{payload: any, open: boolean, onClose: () => void}>;
+export const ChatLoader: React.FC;
 export function isDataEmpty(obj: any): boolean;
 
 export type ChatType = Chat;

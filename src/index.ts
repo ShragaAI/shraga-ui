@@ -12,6 +12,7 @@ import ChatReference from "./components/Chat/ChatReference";
 import FeedbackButtons from "./components/Chat/FeedbackButtons";
 import JSONViewer from "./components/Chat/JSONViewer";
 import PayloadViewer from "./components/Chat/PayloadViewer";
+import ChatLoader from "./components/Chat/ChatLoader";
 import { isDataEmpty } from "./utils/commonUtils";
 import type { Chat as ChatType, Message, RetrievalResult } from "./contexts/AppContext";
 
@@ -28,7 +29,7 @@ export {
     FeedbackButtons,
     JSONViewer,
     PayloadViewer,
-
+    ChatLoader,
     isDataEmpty
 };
 export type { 
