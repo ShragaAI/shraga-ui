@@ -12,6 +12,7 @@ import { v4 as uuid } from "uuid";
 
 import Chat from "../components/Chat/Chat";
 import useChatHistory from "../hooks/useChatHistory";
+import useChatMessages from "../hooks/useChatMessages";
 import { getAuthCookie } from "../utils/auth";
 import { fetchWithTimeout } from "../utils/fetchUtils";
 import { useAppContext, transformPreferences, Flow, Chat as ChatType, Message, Feedback } from "./AppContext";
@@ -53,6 +54,7 @@ interface ChatContextType {
     },
     feedbackText?: string
   ) => Promise<void>;
+  isLoadingChat: boolean;
 }
 
 const defaultContext: ChatContextType = {
@@ -67,7 +69,8 @@ const defaultContext: ChatContextType = {
   refreshChatHistory: async () => [],
   sendMessage: async () => {},
   abortMessage: () => {},
-  submitFeedback: async () => {}
+  submitFeedback: async () => {},
+  isLoadingChat: false
 };
 
 const ChatContext = createContext<ChatContextType>(defaultContext);
@@ -92,6 +95,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   const [chats, setChats] = useState<ChatType[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [chatUpdated, setChatUpdated] = useState(false);
+  const [isLoadingChat, setIsLoadingChat] = useState(false);
+  const [loadedChats, setLoadedChats] = useState<Set<string>>(new Set());
+
+  const { 
+    data: chatMessages
+  } = useChatMessages(selectedChatId);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentChatRef = useRef<string | null>(null);
@@ -111,10 +120,9 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           };
         }
       }
-      
       return chat;
     },
-    [chats.map((c) => c.id), selectedChatId, flows]
+    [chats, selectedChatId, flows]
   );
 
   const canReplyToBot = useMemo(() => {
@@ -159,7 +167,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
 
   useEffect(() => {
     if (chatHistory)
-      setChats((chats) =>
+      setChats(chats => 
         _.unionBy(
           chatHistory,
           chats.filter((c) => c.draft),
@@ -167,6 +175,34 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         )
       );
   }, [chatHistory]);
+
+  useEffect(() => {
+    if (!selectedChatId || !chatMessages || !chatMessages.length) return;
+    
+    setChats((prevChats) => {
+      const updatedChats = [...prevChats];
+      const selectedChatIndex = updatedChats.findIndex(chat => chat.id === selectedChatId);
+      
+      if (selectedChatIndex !== -1) {
+        updatedChats[selectedChatIndex] = {
+          ...updatedChats[selectedChatIndex],
+          messages: chatMessages,
+        };
+      }
+      
+      return updatedChats;
+    });
+    
+    setLoadedChats(prev => new Set([...prev, selectedChatId]));
+    setIsLoadingChat(false);
+  }, [chatMessages, selectedChatId]);
+
+  useEffect(() => {
+    if (!chatHistory || !chatHistory.length || loadedChats.size > 0) return;
+    
+    const newestChatId = chatHistory[0].id;
+    selectChat(newestChatId);
+  }, [chatHistory, loadedChats]);
 
   const createChat = (flow: Flow) => {
     abortMessage();
@@ -178,14 +214,23 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       messages: [],
       timestamp: new Date(),
     };
-    setChats((chats) => [chat, ...chats]);
+    setChats(chats => [chat, ...chats]);
     setSelectedChatId(chat.id);
+
+    setLoadedChats(prev => new Set([...prev, chat.id]));
   };
 
   const selectChat = (chatId: string) => {
     if (!chats.find((c) => c.id === chatId)) return;
+
+    if (!loadedChats.has(chatId) && chatId !== selectedChatId) {
+      setIsLoadingChat(true);
+    }
+
     setSelectedChatId(chatId);
+
     if (currentChatRef.current !== chatId) abortMessage();
+    currentChatRef.current = chatId;
   };
 
   const _addMessageToChat = (chatId: string, message: Message) => {
@@ -198,7 +243,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         messages: [...prevChats[chatIndex].messages, message],
       };
 
-      const newChats = prevChats.filter((c) => c.id !== chatId);
+      const newChats = prevChats.filter((c) => c.id !== chatId);;
       return [updatedChat, ...newChats];
     });
     setChatUpdated(true);
@@ -394,7 +439,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       refreshChatHistory,
       sendMessage,
       abortMessage,
-      submitFeedback
+      submitFeedback,
+      isLoadingChat
     }}>
       {children}
     </ChatContext.Provider>

@@ -48,6 +48,7 @@ export interface ChatContextType {
   submitFeedback: (chatId: string, messageIndex: number, type: string, comment: string) => void;
   chatUpdated: boolean;
   setChatUpdated: (updated: boolean) => void;
+  isLoadingChat: boolean;
 }
 
 export interface ThemeContextType {

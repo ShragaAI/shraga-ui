@@ -60,32 +60,6 @@ h3 {
   border: 3px solid #2c2c2f;
 }
 
-/* Google Maps controls */
-.gm-bundled-control-on-bottom {
-  right: 30px !important;
-}
-
-.gm-bundled-control .gmnoprint {
-  width: 30px !important;
-  height: 61px !important;
-}
-
-.gm-bundled-control .gmnoprint > div {
-  width: 30px !important;
-  height: 61px !important;
-}
-
-.gm-control-active {
-  width: 30px !important;
-  height: 30px !important;
-}
-
-.gm-control-active img {
-  width: 15px !important;
-  height: 15px !important;
-  margin: 0px !important;
-}
-
 .chat-message li > p:first-child {
   margin-top: -23px;
 }

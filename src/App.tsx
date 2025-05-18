@@ -123,9 +123,11 @@ function App({ customChatComponent }: AppProps) {
       path: "/analytics",
       element: (
         <ProtectedRoute requiredRoles={["analytics"]}>
-          <AnalyticsLayout>
-            <Analytics />
-          </AnalyticsLayout>
+          <ChatProvider customChatComponent={customChatComponent}>
+            <AnalyticsLayout>
+              <Analytics />
+            </AnalyticsLayout>
+          </ChatProvider>
         </ProtectedRoute>
       ),
     },
