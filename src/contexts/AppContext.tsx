@@ -54,6 +54,7 @@ export type RetrievalResult = {
 };
 
 export type Message = {
+  msg_id?: string;
   text: string;
   msg_type: 'user' | 'system' | 'feedback';
   timestamp?: string;

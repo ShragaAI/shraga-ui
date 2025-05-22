@@ -20,6 +20,7 @@ import ChatReference from "./ChatReference";
 import FeedbackButtons from "./FeedbackButtons";
 import JSONViewer from "./JSONViewer";
 import PayloadViewer from "./PayloadViewer";
+import ChatLoader from "./ChatLoader";
 
 export interface ChatProps { 
   readOnly?: boolean, 
@@ -61,17 +62,15 @@ export default function Chat({ readOnly = false, chatData }: ChatProps) {
 
   useEffect(() => {
     if (chatUpdated && bottomRef.current && !readOnly) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
-      setChatUpdated(false);
+      const timer = setTimeout(() => {
+        if (bottomRef.current) {
+          bottomRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+        setChatUpdated(false);
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [chatUpdated]);
-
-  useEffect(() => {
-    if (bottomRef.current && !readOnly) {
-      bottomRef.current.scrollIntoView({ behavior: "auto" });
-    }
-    setExpandedMessages({});
-  }, [selectedChat?.id]);
 
   useEffect(() => {
     if (configs?.background_url) setChatBackground(configs?.background_url);
@@ -79,14 +78,14 @@ export default function Chat({ readOnly = false, chatData }: ChatProps) {
 
   const chatObject = chatData || selectedChat;
 
+  useEffect(() => {
+    if (bottomRef.current && !readOnly && !isLoadingChat && chatObject?.messages.length) {
+      bottomRef.current.scrollIntoView({ behavior: "auto" });
+    }
+  }, [isLoadingChat, selectedChat?.id]);
+
   if (isLoadingChat && !readOnly) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex h-[90%] w-full items-center justify-center bg-primary-lt/70 dark:bg-[#2e2e2e]/70 rounded-xl">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      </div>
-    );
+    return <ChatLoader />
   }
 
   return (

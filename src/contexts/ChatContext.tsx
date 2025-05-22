@@ -409,6 +409,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           chat_id: chat.id,
           user_id: chat.user_id,
           flow_id: chat.flow.id,
+          msg_id: message.msg_id ?? "",
           position: message.position,
           feedback: feedbackData,
           feedback_text: feedbackText,
