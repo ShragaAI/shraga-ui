@@ -5,8 +5,15 @@ import {
 } from "react-router-dom";
 
 import { CircularProgress } from "@mui/material";
-
 import classNames from "classnames";
+
+import AppProvider, { useAppContext } from "./contexts/AppContext";
+import { useAuthContext } from "./contexts/AuthContext";
+import { useThemeContext } from "./contexts/ThemeContext";
+import ChatProvider, { useChatContext } from "./contexts/ChatContext";
+import { usePageAccess } from "./hooks/usePageAccess";
+
+import AnalyticsLayout from "./layouts/AnalyticsLayout";
 import Analytics from "./components/Analytics/Analytics";
 import ChatInput from "./components/Chat/ChatInput";
 import Header from "./components/Header";
@@ -14,15 +21,10 @@ import Login from "./components/Login";
 import SessionModal from "./components/SessionEditor/SessionEditorModal";
 import SettingsModal from "./components/Settings/SettingsModal";
 import Sidebar from "./components/Sidebar";
-import AppProvider, { useAppContext } from "./contexts/AppContext";
-import { useAuthContext } from "./contexts/AuthContext";
-import { useThemeContext } from "./contexts/ThemeContext";
-import ChatProvider, { useChatContext } from "./contexts/ChatContext";
-import AnalyticsLayout from "./layouts/AnalyticsLayout";
 
 interface ProtectedRouteProps {
   children: React.ReactElement;
-  requiredRoles?: string[];
+  requiredAccess?: string[];
 }
 
 const Layout = () => {
@@ -82,8 +84,23 @@ interface AppProps {
   customChatComponent?: React.ComponentType;
 }
 
-function App({ customChatComponent }: AppProps) {
-  const { user, isLoading } = useAuthContext();
+const ProtectedRoute = ({ children, requiredAccess }: ProtectedRouteProps) => {
+  const { user } = useAuthContext();
+  const { hasAccess } = usePageAccess();
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  if (requiredAccess && !requiredAccess.every((access) => hasAccess[access as keyof typeof hasAccess])) {
+    return <Navigate to="/" />;
+  }
+
+  return <>{children}</>;
+};
+
+function AppContent({ customChatComponent }: AppProps) {
+  const { isLoading } = useAuthContext();
 
   if (isLoading) {
     return (
@@ -92,21 +109,6 @@ function App({ customChatComponent }: AppProps) {
       </div>
     );
   }
-
-  const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps) => {
-    if (!user) {
-      return <Navigate to="/login" />;
-    }
-
-    if (
-      requiredRoles &&
-      (!user.roles || !requiredRoles.every((role) => user.roles.includes(role)))
-    ) {
-      return <Navigate to="/" />;
-    }
-
-    return <AppProvider>{children}</AppProvider>;
-  };
 
   const router = createBrowserRouter([
     {
@@ -122,7 +124,7 @@ function App({ customChatComponent }: AppProps) {
     {
       path: "/analytics",
       element: (
-        <ProtectedRoute requiredRoles={["analytics"]}>
+        <ProtectedRoute requiredAccess={["analytics"]}>
           <ChatProvider customChatComponent={customChatComponent}>
             <AnalyticsLayout>
               <Analytics />
@@ -137,9 +139,15 @@ function App({ customChatComponent }: AppProps) {
     },
   ]);
 
+  return <RouterProvider router={router} />;
+}
+
+function App(props: AppProps) {
   return (
     <div className="h-full w-full">
-      <RouterProvider router={router} />
+      <AppProvider>
+        <AppContent {...props} />
+      </AppProvider>
     </div>
   );
 }
