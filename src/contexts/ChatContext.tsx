@@ -11,6 +11,7 @@ import { KeyedMutator } from "swr";
 import { v4 as uuid } from "uuid";
 
 import Chat from "../components/Chat/Chat";
+import ChatInput from "../components/Chat/ChatInput";
 import useChatHistory from "../hooks/useChatHistory";
 import useChatMessages from "../hooks/useChatMessages";
 import { getAuthCookie } from "../utils/auth";
@@ -26,6 +27,7 @@ interface ChatComponentProps {
 
 interface ChatContextType {
   ChatComponent: React.ComponentType<ChatComponentProps>;
+  ChatInputComponent: React.ComponentType;
   selectedChat: ChatType | null;
   canReplyToBot: boolean;
   selectChat: (chatId: string) => void;
@@ -41,7 +43,8 @@ interface ChatContextType {
       rtl?: boolean;
       onSuccess?: () => void;
       onError?: (err: any) => void;
-    }
+    },
+    customChatHistory?: any[]
   ) => Promise<void>;
   abortMessage: () => void;
   submitFeedback: (
@@ -59,6 +62,7 @@ interface ChatContextType {
 
 const defaultContext: ChatContextType = {
   ChatComponent: Chat,
+  ChatInputComponent: ChatInput,
   selectedChat: null,
   canReplyToBot: false,
   selectChat: () => {},
@@ -80,18 +84,21 @@ export const useChatContext = () => useContext(ChatContext);
 interface ChatProviderProps {
   children: React.ReactNode;
   customChatComponent?: React.ComponentType<ChatComponentProps>;
+  customChatInputComponent?: React.ComponentType;
 }
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({ 
   children, 
-  customChatComponent 
+  customChatComponent,
+  customChatInputComponent
 }) => {
   const { configs, flows, setIsSessionEditorOpen } = useAppContext();
   const { logout } = useAuthContext();
-  const ChatComponent = customChatComponent || Chat;
-
   const { data: chatHistory, mutate: refreshChatHistory } = useChatHistory();
 
+  const ChatComponent = customChatComponent || Chat;
+  const ChatInputComponent = customChatInputComponent || ChatInput;
+  
   const [chats, setChats] = useState<ChatType[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [chatUpdated, setChatUpdated] = useState(false);
@@ -260,7 +267,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       rtl?: boolean;
       onSuccess?: () => void;
       onError?: (err: any) => void;
-    }
+    },
+    customChatHistory?: any[]
   ) => {
     const currentChatId = chatId;
     currentChatRef.current = chatId;
@@ -270,6 +278,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       _addMessageToChat(currentChatId, { text, msg_type: "user", rtl });
       const chat = chats.find((c) => c.id === currentChatId);
       if (!chat) return;
+
+      const chatHistory = customChatHistory || chat.messages.map((m) => {
+        return {
+          timestamp: m.timestamp,
+          text: m.text,
+          msg_type: m.msg_type,
+        };
+      });
 
       const latestMessage = chat.messages[chat.messages.length - 1];
       const res = await fetchWithTimeout("/api/flows/run", {
@@ -286,13 +302,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           preferences: chat.flow.preferences ?? {},
           chat_id: chat.id,
           position: (latestMessage && latestMessage.position) ? latestMessage.position + 1 : 0,
-          chat_history: chat.messages.map((m) => {
-            return {
-              timestamp: m.timestamp,
-              text: m.text,
-              msg_type: m.msg_type,
-            };
-          }),
+          chat_history: chatHistory,
         }),
         timeout: 300000,
         signal: abortControllerRef.current.signal,
@@ -430,6 +440,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   return (
     <ChatContext.Provider value={{ 
       ChatComponent,
+      ChatInputComponent,
       selectedChat,
       canReplyToBot,
       selectChat,

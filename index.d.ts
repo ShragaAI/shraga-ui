@@ -13,14 +13,26 @@ export interface RetrievalResult {
   extra?: Record<string, any>;
 }
 
+export enum Feedback {
+  THUMBS_UP = "thumbs_up",
+  THUMBS_DOWN = "thumbs_down",
+}
+
 export interface Message {
-  msg_type: string;
-  text?: string;
-  payload: any;
-  retrieval_results?: RetrievalResult[];
-  trace?: Record<string, any>;
+  msg_id?: string;
+  text: string;
+  msg_type: 'user' | 'system' | 'feedback';
+  timestamp?: string;
+  position?: number;
+  rtl: boolean;
+  context?: any;
+  allowReply?: boolean;
   error?: boolean;
-  rtl?: boolean;
+  trace?: any;
+  payload?: any;
+  retrieval_results?: RetrievalResult[];
+  feedback?: Feedback;
+  feedback_text?: string;
 }
 
 export interface Chat {
@@ -49,6 +61,9 @@ export interface ChatContextType {
   chatUpdated: boolean;
   setChatUpdated: (updated: boolean) => void;
   isLoadingChat: boolean;
+  canReplyToBot: boolean;
+  sendMessage: (text: string, chatId: string, opts: {rtl?: boolean, onSuccess?: () => void, onError?: (err: any) => void}, customChatHistory?: any[]) => Promise<void>;
+  abortMessage: () => void;
 }
 
 export interface ThemeContextType {
@@ -60,7 +75,7 @@ export interface ThemeContextType {
 
 export const Chat: React.FC<ChatProps>;
 
-export function createRoot(element: HTMLElement, chatCls?: React.FC<ChatProps>): void;
+export function createRoot(element: HTMLElement, chatCls?: React.FC<ChatProps>, chatInputCls?: React.FC): void;
 
 export function useThemeContext(): ThemeContextType;
 export function useAppContext(): AppContextType;

@@ -8,7 +8,6 @@ import { CircularProgress } from "@mui/material";
 
 import classNames from "classnames";
 import Analytics from "./components/Analytics/Analytics";
-import ChatInput from "./components/Chat/ChatInput";
 import Header from "./components/Header";
 import Login from "./components/Login";
 import SessionModal from "./components/SessionEditor/SessionEditorModal";
@@ -27,7 +26,7 @@ interface ProtectedRouteProps {
 
 const Layout = () => {
   const { configs, isSidebarOpen, toggleSidebar } = useAppContext();
-  const { ChatComponent } = useChatContext();
+  const { ChatComponent, ChatInputComponent } = useChatContext();
   const { chatBackground, theme } = useThemeContext(); 
 
   const defaultFlow = configs?.default_flow;
@@ -55,7 +54,7 @@ const Layout = () => {
               <div className="flex-1 overflow-auto">
                 <ChatComponent />
               </div>
-              <ChatInput />
+              <ChatInputComponent />
             </div>
           </div>
         </main>
@@ -80,9 +79,10 @@ const Layout = () => {
 
 interface AppProps {
   customChatComponent?: React.ComponentType;
+  customChatInputComponent?: React.ComponentType;
 }
 
-function App({ customChatComponent }: AppProps) {
+function App({ customChatComponent, customChatInputComponent }: AppProps) {
   const { user, isLoading } = useAuthContext();
 
   if (isLoading) {
@@ -113,7 +113,10 @@ function App({ customChatComponent }: AppProps) {
       path: "/",
       element: (
         <ProtectedRoute>
-          <ChatProvider customChatComponent={customChatComponent}>
+          <ChatProvider 
+            customChatComponent={customChatComponent}
+            customChatInputComponent={customChatInputComponent}
+          >
             <Layout />
           </ChatProvider>
         </ProtectedRoute>
