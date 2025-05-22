@@ -4,7 +4,6 @@ import { useChatContext } from "../../contexts/ChatContext";
 import useChatMessages from '../../hooks/useChatMessages';
 
 import { CircularProgress } from "@mui/material";
-import Pagination from '@mui/material/Pagination';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbDownOffAlt from '@mui/icons-material/ThumbDownOffAlt';
 
@@ -12,20 +11,20 @@ interface ChatHistoryProps {
     isLoading: boolean;
     filteredChats: ChatType[];
     groupedChats: Record<string, ChatType[]>;
-    pagesNum: number;
-    page: number;
     flows: any[];
-    changePage: (event: React.ChangeEvent<unknown>, page: number) => void;
+    loadMoreChats: () => void;
+    loadingMoreChats: boolean;
+    hasMoreChats: boolean;
 }
 
 export const ChatHistory = ({
     isLoading,
     filteredChats,
     groupedChats,
-    pagesNum,
-    page,
     flows,
-    changePage,
+    loadMoreChats,
+    loadingMoreChats,
+    hasMoreChats
 } : ChatHistoryProps) => {
     const { ChatComponent } = useChatContext();
     const [isSliderOpen, setIsSliderOpen] = useState(false);
@@ -190,6 +189,7 @@ export const ChatHistory = ({
                                                         key={chatItem.id}
                                                         className="flex gap-4 justify-between w-full py-4 px-4 rounded-lg border border-light-stone dark:border-light-stone/50 cursor-pointer hover:bg-primary-lt dark:hover:bg-opacity-10"
                                                         onClick={(event) => handleChatPopoverOpen(event, chatItem)}
+                                                        data-selected={chatItem.id === previousChatRef.current}
                                                     >
                                                         <div className="flex-col w-full space-y-2">
                                                             <div className="text-base font-semibold line-clamp-2 min-h-[2rem]">
@@ -219,15 +219,12 @@ export const ChatHistory = ({
                                         </ul>
                                     ))}
 
-                                    {pagesNum > 1 && (
-                                        <div className="py-8 w-full flex justify-center">
-                                            <Pagination 
-                                                count={pagesNum} 
-                                                page={page}
-                                                variant="outlined" 
-                                                shape="rounded"
-                                                onChange={changePage}
-                                            />
+                                    {hasMoreChats && (
+                                        <div 
+                                            className="py-4 w-full flex justify-center items-center bg-primary-lt !mt-6 rounded-md font-semibold hover:bg-gray-200 cursor-pointer active:bg-gray-200"
+                                            onClick={loadMoreChats}
+                                        >
+                                            {loadingMoreChats ? <CircularProgress size={24} /> : "Load more ..."}
                                         </div>
                                     )}
                                 </>
