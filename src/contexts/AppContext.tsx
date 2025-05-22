@@ -11,6 +11,7 @@ import useFetch from "../hooks/useFetch";
 import useFlowsWithPreferences from "../hooks/useFlowsWithPreferences";
 
 export type UIConfig = {
+  history_enabled: boolean;
   enabled: boolean;
   name: string;
   title: string;

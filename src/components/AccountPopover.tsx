@@ -5,14 +5,19 @@ import { Button, CircularProgress, IconButton, Popover } from "@mui/material";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 
 import { useAuthContext } from "../contexts/AuthContext";
+import { usePageAccess } from "../hooks/usePageAccess";
+
 import Gravatar from "./Settings/Gravatar";
 
 export default function AccountPopover() {
-  const { user, appVersion, isLoading, logout } = useAuthContext();
-  const [isOpen, setIsOpen] = useState(false);
-  const anchorEl = useRef<HTMLButtonElement | null>(null);
   const navigate = useNavigate();
+  const { user, appVersion, isLoading, logout } = useAuthContext();
+  const { hasAccess } = usePageAccess();
+
+  const [isOpen, setIsOpen] = useState(false);
   const [hasGravatar, setHasGravatar] = useState(false);
+
+  const anchorEl = useRef<HTMLButtonElement | null>(null);
 
   return (
     <>
@@ -56,7 +61,7 @@ export default function AccountPopover() {
                 {user?.display_name}
               </div>
 
-              {user.roles && user.roles.includes('analytics') && (
+              {hasAccess?.analytics && (
                 <a 
                   href="/analytics" 
                   className="p-2 hover:bg-primary-lt text-left text-sm dark:hover:bg-white dark:hover:bg-opacity-10"
