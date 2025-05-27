@@ -6,7 +6,7 @@ import { defineConfig } from "vite";
 export default ({ mode } : { mode: string }) => {
   return defineConfig({
     build: {
-      minify: process.env.NODE_ENV === 'production',
+      minify: mode === 'production',
       sourcemap: true,
       lib: {
         entry: path.resolve(__dirname, "src/index.ts"), // Entry point
