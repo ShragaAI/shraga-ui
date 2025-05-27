@@ -222,7 +222,7 @@ export default function Chat({ readOnly = false, chatData }: ChatProps) {
                       </div>
                     )}
                   <CopyToClipboard
-                    text={message.text}
+                    text={message.text ?? ''}
                     onCopy={() => {
                       setCopiedMessages(index, true);
                       setTimeout(() => setCopiedMessages(index, false), 3000);

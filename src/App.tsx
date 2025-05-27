@@ -27,6 +27,10 @@ interface ProtectedRouteProps {
   requiredAccess?: string[];
 }
 
+interface AppProps {
+  customChatComponent?: React.ComponentType;
+}
+
 const Layout = () => {
   const { configs, isSidebarOpen, toggleSidebar } = useAppContext();
   const { ChatComponent } = useChatContext();
@@ -80,27 +84,8 @@ const Layout = () => {
   );
 };
 
-interface AppProps {
-  customChatComponent?: React.ComponentType;
-}
-
-const ProtectedRoute = ({ children, requiredAccess }: ProtectedRouteProps) => {
-  const { user } = useAuthContext();
-  const { hasAccess } = usePageAccess();
-
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-
-  if (requiredAccess && !requiredAccess.every((access) => hasAccess[access as keyof typeof hasAccess])) {
-    return <Navigate to="/" />;
-  }
-
-  return <>{children}</>;
-};
-
 function AppContent({ customChatComponent }: AppProps) {
-  const { isLoading } = useAuthContext();
+  const { isLoading, user } = useAuthContext();
 
   if (isLoading) {
     return (
@@ -110,36 +95,69 @@ function AppContent({ customChatComponent }: AppProps) {
     );
   }
 
+  if (!user) {
+    const router = createBrowserRouter([
+      {
+        path: "/login",
+        element: <Login />,
+      },
+      {
+        path: "*",
+        element: <Navigate to="/login" />,
+      },
+    ]);
+
+    return <RouterProvider router={router} />;
+  }
+
+  const CheckAccess = ({ children, requiredAccess }: ProtectedRouteProps) => {
+    const { hasAccess } = usePageAccess();
+  
+    if (requiredAccess && !requiredAccess.every((access) => hasAccess[access as keyof typeof hasAccess])) {
+      return <Navigate to="/" />;
+    }
+  
+    return (
+      <ChatProvider customChatComponent={customChatComponent}>
+        {children}
+      </ChatProvider>
+    );
+  };
+
+  const Protected = ({ children, requiredAccess }: ProtectedRouteProps) => (
+    <AppProvider>
+      <CheckAccess requiredAccess={requiredAccess}>
+        {children}
+      </CheckAccess>
+    </AppProvider>
+  );
+
   const router = createBrowserRouter([
     {
       path: "/",
       element: (
-      <AppProvider>
-        <ProtectedRoute>
-          <ChatProvider customChatComponent={customChatComponent}>
-            <Layout />
-          </ChatProvider>
-        </ProtectedRoute>
-      </AppProvider>
+        <Protected>
+          <Layout />
+        </Protected>
       ),
     },
     {
       path: "/analytics",
       element: (
-      <AppProvider>
-        <ProtectedRoute requiredAccess={["analytics"]}>
-          <ChatProvider customChatComponent={customChatComponent}>
-            <AnalyticsLayout>
-              <Analytics />
-            </AnalyticsLayout>
-          </ChatProvider>
-        </ProtectedRoute>
-      </AppProvider>
+        <Protected requiredAccess={["analytics"]}>
+          <AnalyticsLayout>
+            <Analytics />
+          </AnalyticsLayout>
+        </Protected>
       ),
     },
     {
       path: "/login",
       element: <Login />,
+    },
+    {
+      path: "*",
+      element: <Navigate to="/login" />,
     },
   ]);
 
@@ -149,7 +167,7 @@ function AppContent({ customChatComponent }: AppProps) {
 function App(props: AppProps) {
   return (
     <div className="h-full w-full">
-        <AppContent {...props} />
+      <AppContent {...props} />
     </div>
   );
 }
