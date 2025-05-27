@@ -38,27 +38,31 @@ export default function Login() {
     };
     
     fetchLoginMethods();
-
-    const getOAuthClientIds = async () => {
-      try {
-        const response = await fetch(`/oauth/keys`, {
-          method: "GET"
-        });
-  
-        if (!response.ok) {
-          throw new Error(`Failed receiving client ids`);
-        }
-  
-        const data = await response.json();
-        setOAuthKeys(data);
-  
-      } catch (error) {
-        console.error("Data receiving error:", error);
-      }
-    }
-
-    getOAuthClientIds();
   }, []);
+
+  useEffect(() => {
+    if (loginMethods?.includes(LoginMethod.GOOGLE_LOGIN) || loginMethods?.includes(LoginMethod.MICROSOFT_LOGIN)) {
+      const getOAuthClientIds = async () => {
+        try {
+          const response = await fetch(`/oauth/keys`, {
+            method: "GET"
+          });
+    
+          if (!response.ok) {
+            throw new Error(`Failed receiving client ids`);
+          }
+    
+          const data = await response.json();
+          setOAuthKeys(data);
+    
+        } catch (error) {
+          console.error("Data receiving error:", error);
+        }
+      }
+
+      getOAuthClientIds();
+    }
+  }, [loginMethods]);
 
   const handleGoogleLogin = async () => {
     if(!oAuthKeys || !oAuthKeys.google) return;

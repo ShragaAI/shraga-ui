@@ -6,6 +6,8 @@ import { defineConfig } from "vite";
 export default ({ mode } : { mode: string }) => {
   return defineConfig({
     build: {
+      minify: mode === 'production',
+      sourcemap: true,
       lib: {
         entry: path.resolve(__dirname, "src/index.ts"), // Entry point
         name: "ShragaUI", // Global variable name for UMD build

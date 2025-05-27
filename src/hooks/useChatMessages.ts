@@ -1,8 +1,9 @@
 import useSWR from "swr";
 import { getAuthCookie } from "../utils/auth";
 import { fetcher } from "./useFetch";
+import { UIConfig } from "../contexts/AppContext";
 
-export default function useChatMessages(chatId: string | null) {
+export default function useChatMessages(configs: UIConfig | undefined, chatId: string | null) {
     const headers: { [key: string]: string } = {
         "Content-Type": "application/json",
     };
@@ -18,7 +19,7 @@ export default function useChatMessages(chatId: string | null) {
         swrKey,
         async () => {
             try {
-                if (!chatId) return [];
+                if (!chatId || !configs?.history_enabled) return [];
                 
                 const messages = await fetcher(`/api/history/${chatId}/messages`, {
                     headers,

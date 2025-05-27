@@ -1,9 +1,9 @@
 import useSWR from "swr";
-import { Chat } from "../contexts/AppContext";
+import { Chat, UIConfig } from "../contexts/AppContext";
 import { getAuthCookie } from "../utils/auth";
 import { fetcher } from "./useFetch";
 
-export default function useChatHistory() {
+export default function useChatHistory(uiConfig: UIConfig | undefined) {
   const headers: { [key: string]: string } = {
     "Content-Type": "application/json",
   };
@@ -18,6 +18,9 @@ export default function useChatHistory() {
     swrKey,
     async () => {
       try {
+        if (!uiConfig?.history_enabled) {
+          return [];
+        }
         const data: any[] = await fetcher("/api/history/list", {
           headers,
         });

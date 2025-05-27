@@ -114,16 +114,19 @@ function AppContent({ customChatComponent }: AppProps) {
     {
       path: "/",
       element: (
+      <AppProvider>
         <ProtectedRoute>
           <ChatProvider customChatComponent={customChatComponent}>
             <Layout />
           </ChatProvider>
         </ProtectedRoute>
+      </AppProvider>
       ),
     },
     {
       path: "/analytics",
       element: (
+      <AppProvider>
         <ProtectedRoute requiredAccess={["analytics"]}>
           <ChatProvider customChatComponent={customChatComponent}>
             <AnalyticsLayout>
@@ -131,6 +134,7 @@ function AppContent({ customChatComponent }: AppProps) {
             </AnalyticsLayout>
           </ChatProvider>
         </ProtectedRoute>
+      </AppProvider>
       ),
     },
     {
@@ -145,9 +149,7 @@ function AppContent({ customChatComponent }: AppProps) {
 function App(props: AppProps) {
   return (
     <div className="h-full w-full">
-      <AppProvider>
         <AppContent {...props} />
-      </AppProvider>
     </div>
   );
 }

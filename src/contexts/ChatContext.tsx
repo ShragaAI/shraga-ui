@@ -90,7 +90,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   const { logout } = useAuthContext();
   const ChatComponent = customChatComponent || Chat;
 
-  const { data: chatHistory, mutate: refreshChatHistory } = useChatHistory();
+  const { data: chatHistory, mutate: refreshChatHistory } = useChatHistory(configs);
 
   const [chats, setChats] = useState<ChatType[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -100,7 +100,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
 
   const { 
     data: chatMessages
-  } = useChatMessages(selectedChatId);
+  } = useChatMessages(configs, selectedChatId);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentChatRef = useRef<string | null>(null);
