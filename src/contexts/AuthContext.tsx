@@ -70,15 +70,25 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     const state = params.get("state");
+    
     if (code && state) {
       handleOAuthCallback(code, state);
       return;
     }
 
-    _fetchUser(getAuthCookie()).then(({ ok, data }) => {
+    const cookie = getAuthCookie();
+    if (!cookie) {
+      setIsLoading(false);
+      return;
+    }
+
+    _fetchUser(cookie).then(({ ok, data }) => {
       if (ok) {
         setUser(data);
         setAppVersion(data.shraga_version);
+      } else {
+        // clear cookie if user fetch fails
+        setAuthCookie(undefined);
       }
       setIsLoading(false);
     });
