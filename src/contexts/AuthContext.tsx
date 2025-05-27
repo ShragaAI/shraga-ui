@@ -82,16 +82,23 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       return;
     }
 
-    _fetchUser(cookie).then(({ ok, data }) => {
-      if (ok) {
-        setUser(data);
-        setAppVersion(data.shraga_version);
-      } else {
-        // clear cookie if user fetch fails
-        setAuthCookie(undefined);
+    (async () => {
+      try {
+        const { ok, data } = await _fetchUser(cookie);
+        if (ok) {
+          setUser(data);
+          setAppVersion(data.shraga_version);
+        } else {
+          // clear cookie if user fetch fails
+          setAuthCookie(undefined);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+        setAuthCookie(undefined); // Clear cookie on error
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    });
+    })();
   }, []);
 
   const handleOAuthCallback = async (code: string, state: string) => {
