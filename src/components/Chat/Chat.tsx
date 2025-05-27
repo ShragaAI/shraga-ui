@@ -165,7 +165,7 @@ export default function Chat({ readOnly = false, chatData }: ChatProps) {
                         ),
                       }}
                     >
-                      {message.text && message.text.split(/\n{2,}/).join("\n")}
+                      {message.text && message.text?.split(/\n{2,}/).join("\n")}
                     </ReactMarkdown>
 
                     {import.meta.env.DEV && (
