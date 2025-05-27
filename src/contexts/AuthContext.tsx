@@ -134,7 +134,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         Authorization: authToken ?? "",
       },
     });
-    const data = await res.json();
+    const data = res ? await res.json() : null;
     return { ok: res.ok, data };
   };
 
