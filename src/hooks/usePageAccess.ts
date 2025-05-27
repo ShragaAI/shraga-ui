@@ -6,7 +6,7 @@ export const usePageAccess = () => {
   const { user } = useAuthContext();
 
   const hasAnalyticsAccess = () => {
-    if (!configs?.history_enabled) {
+    if (configs && !configs?.history_enabled) {
       return false;
     }
 

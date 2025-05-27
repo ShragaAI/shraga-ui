@@ -1,9 +1,12 @@
 import useSWR from "swr";
 import { getAuthCookie } from "../utils/auth";
 import { fetcher } from "./useFetch";
-import { UIConfig } from "../contexts/AppContext";
+import { useAppContext } from "../contexts/AppContext";
 
-export default function useChatMessages(configs: UIConfig | undefined, chatId: string | null) {
+export default function useChatMessages(chatId: string | null) {
+
+    const { configs } = useAppContext();
+
     const headers: { [key: string]: string } = {
         "Content-Type": "application/json",
     };

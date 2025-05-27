@@ -90,7 +90,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   const { logout } = useAuthContext();
   const ChatComponent = customChatComponent || Chat;
 
-  const { data: chatHistory, mutate: refreshChatHistory } = useChatHistory(configs);
+  const { data: chatHistory, mutate: refreshChatHistory } = useChatHistory();
 
   const [chats, setChats] = useState<ChatType[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -100,7 +100,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
 
   const { 
     data: chatMessages
-  } = useChatMessages(configs, selectedChatId);
+  } = useChatMessages(selectedChatId);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentChatRef = useRef<string | null>(null);
@@ -126,8 +126,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   );
 
   const canReplyToBot = useMemo(() => {
-    return selectedChat?.flow.preferences?.history_window > 0;
-  }, [selectedChat]);
+    return (selectedChat?.flow.preferences?.history_window > 0 || configs?.history_enabled) ?? false;
+  }, [selectedChat, configs]);
 
   useEffect(() => {
     if (!configs || !flows || selectedChat || chatHistory === undefined) return;
