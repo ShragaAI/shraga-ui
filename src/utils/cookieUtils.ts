@@ -2,7 +2,7 @@ export function setCookie(name: string, value: string, hours: number): void {
   const date = new Date();
   date.setTime(date.getTime() + (hours * 60 * 60 * 1000));
   const expires = "expires=" + date.toUTCString();
-  document.cookie = `${name}=${value};${expires};path=/`;
+  document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Strict`;
 }
 
 export function getCookie(name: string): string | null {
