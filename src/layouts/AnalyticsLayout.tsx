@@ -11,7 +11,7 @@ type AnalyticsLayoutProps = {
 
 const AnalyticsLayout = ({ children } : AnalyticsLayoutProps) => {
     return (
-      <div className="relative flex h-full w-full">
+      <div className="relative flex h-full w-full" id="analytics">
         <div className="relative flex-1">
           <main className="flex flex-col flex-1 h-full overflow-auto z-10">
             <Header

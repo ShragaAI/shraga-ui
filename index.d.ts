@@ -58,9 +58,13 @@ export interface ThemeContextType {
   chatBackground?: string;
 }
 
+export interface CreateRootConfig {
+  logo?: React.ComponentType<{ className?: string }>;
+}
+
 export const Chat: React.FC<ChatProps>;
 
-export function createRoot(element: HTMLElement, chatCls?: React.FC<ChatProps>): void;
+export function createRoot(element: HTMLElement, chatCls?: React.FC<ChatProps>, config?: CreateRootConfig): void;
 
 export function useThemeContext(): ThemeContextType;
 export function useAppContext(): AppContextType;

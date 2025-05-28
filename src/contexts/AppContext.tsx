@@ -9,6 +9,7 @@ import {
 
 import useFetch from "../hooks/useFetch";
 import useFlowsWithPreferences from "../hooks/useFlowsWithPreferences";
+import { CreateRootConfig } from "../CreateRoot";
 
 export type UIConfig = {
   history_enabled: boolean;
@@ -89,6 +90,7 @@ export enum Feedback {
 
 type AppContextData = {
   configs?: UIConfig;
+  customConfig?: CreateRootConfig;
   flows?: Flow[];
   appSection?: string;
   setAppSection?: (section: string) => void;
@@ -104,6 +106,7 @@ type AppContextData = {
 
 type AppProviderProps = {
   children: ReactElement;
+  config?: CreateRootConfig;
 };
 
 export const transformPreferences = (preferences?: Record<string, any>): Record<string, any> => {
@@ -128,7 +131,7 @@ export const useAppContext = () => {
   return context;
 };
 
-export default function AppProvider({ children }: AppProviderProps) {
+export default function AppProvider({ children, config: customConfig }: AppProviderProps) {
   const { data: flows } = useFlowsWithPreferences();
   const { data: configs } = useFetch<UIConfig>("/api/ui/configs");
 
@@ -150,6 +153,7 @@ export default function AppProvider({ children }: AppProviderProps) {
     <AppContext.Provider
       value={{
         configs,
+        customConfig,
         flows,
         appSection,
         setAppSection,
