@@ -6,12 +6,16 @@ import App from "./App.tsx";
 import AuthProvider from "./contexts/AuthContext.tsx";
 import ThemeProvider from "./contexts/ThemeContext.tsx";
 
-export const createRoot = (element: HTMLElement, chatCls?: React.FC) => {
+export interface CreateRootConfig {
+  logo?: React.ComponentType<{ className?: string }>;
+}
+
+export const createRoot = (element: HTMLElement, chatCls?: React.FC, config?: CreateRootConfig) => {
     return ReactDOM.createRoot(element).render(
       <React.StrictMode>
         <ThemeProvider>
           <AuthProvider>
-            <App customChatComponent={chatCls} />
+            <App customChatComponent={chatCls} config={config} />
           </AuthProvider>
         </ThemeProvider>
         <ToastContainer aria-label={"toast-messages"} />

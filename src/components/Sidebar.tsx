@@ -104,7 +104,7 @@ export default function Sidebar({
             {Object.entries(groupedChats).map(([groupTitle, groupList]) => {
               return (
                 <ul key={groupTitle}>
-                  <div className="capitalize mt-3 mb-4 font-semibold text-sm px-2">
+                  <div className="capitalize mt-3 mb-4 font-medium font-primary-dk text-sm px-2">
                     {groupTitle}
                   </div>
                   {groupList.map((chatItem: Chat) => {
@@ -124,12 +124,11 @@ export default function Sidebar({
                           className="flex-col w-full"
                           onClick={() => selectChat(chatItem.id)}
                         >
-                          <div className="text-base font-semibold line-clamp-2 min-h-[3rem] break-all">
+                          <div className={`text-base font-semibold line-clamp-2 break-all ${(configs?.list_flows || import.meta.env.DEV) ? "min-h-[3rem] mb-1" : ""}`}>
                             {chatItem.messages?.[0]?.text || "Question"}
                           </div>
                           <p className="text-sm line-clamp-1 text-gray-500">
-                            {flow?.description || ""} [{chatItem.id.slice(0, 5)}
-                            ]
+                            {configs?.list_flows ? flow?.description : ""} {import.meta.env.DEV && (<span>[{chatItem.id.slice(0, 5)}]</span>)}
                           </p>
                         </div>
                       </li>

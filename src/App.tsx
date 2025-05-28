@@ -4,7 +4,6 @@ import {
   RouterProvider,
 } from "react-router-dom";
 
-import { CircularProgress } from "@mui/material";
 import classNames from "classnames";
 
 import AppProvider, { useAppContext } from "./contexts/AppContext";
@@ -21,6 +20,8 @@ import Login from "./components/Login";
 import SessionModal from "./components/SessionEditor/SessionEditorModal";
 import SettingsModal from "./components/Settings/SettingsModal";
 import Sidebar from "./components/Sidebar";
+import LoadingScreen from "./components/Base/LoadingScreen";
+import { CreateRootConfig } from "./CreateRoot";
 
 interface ProtectedRouteProps {
   children: React.ReactElement;
@@ -29,10 +30,11 @@ interface ProtectedRouteProps {
 
 interface AppProps {
   customChatComponent?: React.ComponentType;
+  config?: CreateRootConfig;
 }
 
 const Layout = () => {
-  const { configs, isSidebarOpen, toggleSidebar } = useAppContext();
+  const { configs, customConfig, isSidebarOpen, toggleSidebar } = useAppContext();
   const { ChatComponent } = useChatContext();
   const { chatBackground, theme } = useThemeContext(); 
 
@@ -40,15 +42,11 @@ const Layout = () => {
   const sessionModal = configs?.list_flows || (Array.isArray(defaultFlow) && defaultFlow.length > 1) ? <SessionModal /> : null;
 
   if (!configs) {
-    return (
-      <div className="flex h-full justify-center items-center">
-        <CircularProgress />
-      </div>
-    );
+    return <LoadingScreen logo={customConfig?.logo} />;
   }
 
   return (
-    <div className="relative flex h-full w-full">
+    <div className="relative flex h-full w-full" id="main">
       <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       <div className="relative flex-1">
         <main className="flex flex-col flex-1 h-full overflow-auto z-10">
@@ -84,15 +82,11 @@ const Layout = () => {
   );
 };
 
-function AppContent({ customChatComponent }: AppProps) {
+function AppContent({ customChatComponent, config }: AppProps) {
   const { isLoading, user } = useAuthContext();
 
   if (isLoading) {
-    return (
-      <div className="flex h-full justify-center items-center">
-        <CircularProgress />
-      </div>
-    );
+    return <LoadingScreen logo={config?.logo} />;
   }
 
   if (!user) {
@@ -125,7 +119,7 @@ function AppContent({ customChatComponent }: AppProps) {
   };
 
   const Protected = ({ children, requiredAccess }: ProtectedRouteProps) => (
-    <AppProvider>
+    <AppProvider config={config}>
       <CheckAccess requiredAccess={requiredAccess}>
         {children}
       </CheckAccess>

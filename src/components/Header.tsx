@@ -25,7 +25,13 @@ export default function Header({ isSidebarOpen, toggleSidebar, sidebarControl = 
             />
           </div>
         )}
-        <h2 className="text-3xl"><a href="/">{configs?.title || 'Shraga'}</a>{appSection && ` - ${appSection}`}</h2>
+        <h2 className="text-3xl flex gap-4 items-end">
+          <a href="/" className="inline-block">
+            <span className="header-logo"></span>
+            <span className="header-title">{configs?.title || 'Shraga'}</span>
+          </a>
+          {appSection && ` - ${appSection}`}
+        </h2>
       </div>
       <div className="flex">
         {headerToolbar && (
