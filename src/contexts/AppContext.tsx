@@ -143,7 +143,7 @@ export default function AppProvider({ children, config: customConfig }: AppProvi
 
   useEffect(() => {
     document.title = configs?.title || "Shraga";
-  }, [configs?.title]);
+  }, [configs]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prevState) => !prevState);

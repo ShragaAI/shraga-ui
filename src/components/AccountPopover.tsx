@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import { Button, CircularProgress, IconButton, Popover } from "@mui/material";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
@@ -10,7 +9,6 @@ import { usePageAccess } from "../hooks/usePageAccess";
 import Gravatar from "./Settings/Gravatar";
 
 export default function AccountPopover() {
-  const navigate = useNavigate();
   const { user, appVersion, isLoading, logout } = useAuthContext();
   const { hasAccess } = usePageAccess();
 
@@ -74,8 +72,8 @@ export default function AccountPopover() {
                 variant="contained"
                 size="small"
                 onClick={() => {
+                  setIsOpen(false);
                   logout();
-                  navigate("/login");
                 }}
               >
                 Log out

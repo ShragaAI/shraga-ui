@@ -118,7 +118,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       }
 
       const data = await response.json();
-      setAuthCookie(`${state} ${data.token}`);
+      setAuthCookie(`${state} ${data.token}`, data?.lifetime || undefined);
 
       const { ok, data: userData } = await _fetchUser(data.token);
       if (ok) {
@@ -166,7 +166,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       if (ok) {
         setUser(data);
         setAppVersion(data.shraga_version);
-        setAuthCookie(basicAuthString);
+        setAuthCookie(basicAuthString, data?.lifetime || undefined);
         onSuccess?.(basicAuthString);
       } else {
         const errMessage = data.detail;
@@ -178,9 +178,9 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = () => {
-    // Perform logout
     setUser(undefined);
     setAuthCookie(undefined);
+    window.location.href = "/login";
   };
 
   const getLoginMethods = async (): Promise<[LoginMethod] | undefined> => {

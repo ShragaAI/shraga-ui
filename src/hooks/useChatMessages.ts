@@ -1,21 +1,14 @@
 import useSWR from "swr";
 import { getAuthCookie } from "../utils/auth";
-import { fetcher } from "./useFetch";
+import useFetch from "./useFetch";
 import { useAppContext } from "../contexts/AppContext";
 
 export default function useChatMessages(chatId: string | null) {
 
     const { configs } = useAppContext();
+    const { fetcher } = useFetch();
 
-    const headers: { [key: string]: string } = {
-        "Content-Type": "application/json",
-    };
-  
     const authString = getAuthCookie();
-    if (authString) {
-        headers["Authorization"] = authString;
-    }
-    
     const swrKey = chatId ? [`chat_messages_${chatId}`, authString] : null;
 
     const { data, error, mutate, isValidating, isLoading } = useSWR(
@@ -24,9 +17,7 @@ export default function useChatMessages(chatId: string | null) {
             try {
                 if (!chatId || !configs?.history_enabled) return [];
                 
-                const messages = await fetcher(`/api/history/${chatId}/messages`, {
-                    headers,
-                });
+                const messages = await fetcher(`/api/history/${chatId}/messages`);
                 
                 return messages.map((message: any) => ({
                     ...message,

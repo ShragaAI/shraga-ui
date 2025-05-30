@@ -14,9 +14,8 @@ import Chat from "../components/Chat/Chat";
 import useChatHistory from "../hooks/useChatHistory";
 import useChatMessages from "../hooks/useChatMessages";
 import { getAuthCookie } from "../utils/auth";
-import { fetchWithTimeout } from "../utils/fetchUtils";
+import useFetch from "../hooks/useFetch";
 import { useAppContext, transformPreferences, Flow, Chat as ChatType, Message, Feedback } from "./AppContext";
-import { useAuthContext } from "./AuthContext";
 
 interface ChatComponentProps {
     readOnly?: boolean;
@@ -87,10 +86,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   customChatComponent 
 }) => {
   const { configs, flows, setIsSessionEditorOpen } = useAppContext();
-  const { logout } = useAuthContext();
   const ChatComponent = customChatComponent || Chat;
 
   const { data: chatHistory, mutate: refreshChatHistory } = useChatHistory();
+  const { fetchWithTimeout } = useFetch();
 
   const [chats, setChats] = useState<ChatType[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -298,12 +297,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         signal: abortControllerRef.current.signal,
       });
 
-      if (res.status === 401) {
-        logout();
-        window.location.href = "/";
-        return;
-      }
-
       const data = await res.json();
       if (res.ok && currentChatRef.current === chatId) {
         _addMessageToChat(currentChatId, {
@@ -353,12 +346,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         });
         onSuccess?.();
       } else {
-        if (err.response && err.response.status === 401) {
-          logout();
-          window.location.href = "/";
-          return;
-        }
-
         setChats((prevChats) => {
           const prevChatsCopy = prevChats.slice();
           const chatIndex = prevChatsCopy.findIndex(
