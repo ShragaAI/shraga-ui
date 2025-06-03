@@ -124,7 +124,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       }
 
       const data = await response.json();
-      setAuthCookie(`${state} ${data.token}`, data?.session_lifetime_hrs || undefined);
+      setAuthCookie(`${state} ${data.token}`, data?.session_timeout || undefined);
 
       const { ok, data: userData } = await _fetchUser(data.token);
       if (ok) {
@@ -172,7 +172,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       if (ok) {
         setUser(data);
         setAppVersion(data.shraga_version);
-        setAuthCookie(basicAuthString, data?.session_lifetime_hrs || undefined);
+        setAuthCookie(basicAuthString, data?.session_timeout || undefined);
         onSuccess?.(basicAuthString);
       } else {
         const errMessage = data.detail;
