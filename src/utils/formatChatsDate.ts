@@ -4,6 +4,7 @@ import isToday from "dayjs/plugin/isToday";
 import isYesterday from "dayjs/plugin/isYesterday";
 import advancedFormat from "dayjs/plugin/advancedFormat";
 import { Chat } from "../contexts/AppContext.tsx";
+import { DialogItem } from "../components/Analytics/Analytics.tsx";
 
 dayjs.extend(relativeTime);
 dayjs.extend(isToday);
@@ -55,4 +56,31 @@ export const groupChatsByDate = (chats: Chat[]) => {
   });
 
   return categorized;
+};
+
+export const groupDialogsByDate = (dialogs: DialogItem[]): Record<string, DialogItem[]> => {
+  return dialogs.reduce((groups: Record<string, DialogItem[]>, dialog) => {
+      const date = dayjs(dialog.timestamp);
+      const today = dayjs();
+      const yesterday = today.subtract(1, 'day');
+      
+      let key: string;
+      if (date.isSame(today, 'day')) {
+          key = 'today';
+      } else if (date.isSame(yesterday, 'day')) {
+          key = 'yesterday';
+      } else if (date.isSame(today, 'week')) {
+          key = 'this week';
+      } else if (date.isSame(today, 'month')) {
+          key = 'this month';
+      } else {
+          key = date.format('MMMM YYYY');
+      }
+      
+      if (!groups[key]) {
+          groups[key] = [];
+      }
+      groups[key].push(dialog);
+      return groups;
+  }, {});
 };
