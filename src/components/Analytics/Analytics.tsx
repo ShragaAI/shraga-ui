@@ -8,8 +8,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs, { Dayjs } from "dayjs";
 import isBetween from 'dayjs/plugin/isBetween';
 import { useAppContext, Chat } from "../../contexts/AppContext";
-import { fetcher } from "../../hooks/useFetch";
-import { getAuthCookie } from "../../utils/auth";
+import useFetch from "../../hooks/useFetch";
 import { groupChatsByDate } from "../../utils/formatChatsDate.ts";
 import { ChatHistory } from "./ChatHistory";
 import { Statistics } from "./Statistics";
@@ -37,6 +36,8 @@ export const CustomTabPanel: React.FC<CustomTabPanelProps> = ({ children, value,
 
 export default function Analytics() {
     const { flows, setAppSection, setHeaderToolbar } = useAppContext();
+    const { fetcher } = useFetch();
+
     const [page, setPage] = useState(1);
     const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().subtract(7, 'day'));
     const [endDate, setEndDate] = useState<Dayjs | null>(null);
@@ -52,11 +53,6 @@ export default function Analytics() {
         sessionStorage.setItem('analyticsTab', tabValue.toString());
     }, [tabValue]);
 
-    const headers = {
-        "Content-Type": "application/json",
-        "Authorization": getAuthCookie() || ""
-    };
-
     const { data: chats, isLoading } = useSWR(
         ["analytics_chat_history", startDate, endDate],
         async ([_, start, end]) => {
@@ -65,7 +61,7 @@ export default function Analytics() {
             if (end) params.end = (end as Dayjs).format('YYYY-MM-DD');
 
             const queryString = new URLSearchParams(params).toString();
-            const data = await fetcher(`/api/analytics/chat-history?${queryString}`, { headers });
+            const data = await fetcher(`/api/analytics/chat-history?${queryString}`);
             
             return data.map((chat: any) => ({
                 ...chat,
