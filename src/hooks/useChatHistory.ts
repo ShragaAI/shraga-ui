@@ -1,15 +1,14 @@
 import useSWR from "swr";
 import { Chat, useAppContext } from "../contexts/AppContext";
 import { getAuthCookie } from "../utils/auth";
-import { fetcher } from "./useFetch";
+import useFetch from "./useFetch";
 
 export default function useChatHistory() {
 
   const { configs: uiConfig } = useAppContext();
+  const { fetcher } = useFetch();
 
-  const headers: { [key: string]: string } = {
-    "Content-Type": "application/json",
-  };
+  const headers: { [key: string]: string } = {};
 
   const authString = getAuthCookie();
   if (authString) {

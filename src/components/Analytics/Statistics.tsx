@@ -1,8 +1,7 @@
 import useSWR from "swr";
 import dayjs, { Dayjs } from "dayjs";
 
-import { getAuthCookie } from "../../utils/auth";
-import { fetcher } from "../../hooks/useFetch";
+import useFetch from "../../hooks/useFetch";
 
 import { LineChart } from '@mui/x-charts/LineChart';
 import { CurveType } from '@mui/x-charts/models';
@@ -144,10 +143,7 @@ const TimeSeriesChart = ({ data, metricKey, title, percentiles, colors, yAxisTit
 
 export const Statistics = ({ startDate, endDate }: { startDate: Dayjs | null; endDate: Dayjs | null }) => {
 
-    const headers = {
-        "Content-Type": "application/json",
-        "Authorization": getAuthCookie() || ""
-    };
+    const { fetcher } = useFetch();
 
     const { data, isLoading } = useSWR(
         ["chat_analytics", startDate, endDate],
@@ -157,7 +153,6 @@ export const Statistics = ({ startDate, endDate }: { startDate: Dayjs | null; en
             if (end) params.end = (end as Dayjs).format('YYYY-MM-DD');
 
             const data: AnalyticsData = await fetcher(`/api/analytics/`, {
-                headers, 
                 method: "POST", 
                 body: JSON.stringify(params)    
             });
