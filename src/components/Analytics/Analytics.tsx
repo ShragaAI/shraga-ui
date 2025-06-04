@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { Button, Tabs, Tab } from "@mui/material";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -7,14 +7,33 @@ import { DemoContainer } from '@mui/x-date-pickers/internals/demo';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs, { Dayjs } from "dayjs";
 import isBetween from 'dayjs/plugin/isBetween';
-import { useAppContext, Chat } from "../../contexts/AppContext";
+import { useAppContext, Message } from "../../contexts/AppContext";
 import { fetcher } from "../../hooks/useFetch";
 import { getAuthCookie } from "../../utils/auth";
-import { groupChatsByDate } from "../../utils/formatChatsDate.ts";
 import { ChatHistory } from "./ChatHistory";
 import { Statistics } from "./Statistics";
 
 dayjs.extend(isBetween);
+
+interface AnalyticsMessage extends Omit<Message, 'msg_type'> {
+    chat_id: string;
+    user_id: string;
+    flow_id: string;
+    timestamp: string;
+    msg_type: 'user' | 'system' | 'feedback' | 'error';
+}
+
+export interface DialogItem {
+    msg_id: string;
+    chat_id: string;
+    user_id: string;
+    flow_id?: string;
+    timestamp: string;
+    user_message: AnalyticsMessage;
+    system_message?: AnalyticsMessage;
+    has_error: boolean;
+    feedback_type?: 'up' | 'down';
+}
 
 interface CustomTabPanelProps {
     children: React.ReactNode;
@@ -40,7 +59,7 @@ export default function Analytics() {
     const [page, setPage] = useState(1);
     const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().subtract(7, 'day'));
     const [endDate, setEndDate] = useState<Dayjs | null>(null);
-    const [filteredChats, setFilteredChats] = useState<Chat[]>([]);
+    const [filteredDialogsState, setFilteredDialogsState] = useState<DialogItem[]>([]);
     const itemsPerPage = 20;
 
     const [tabValue, setTabValue] = useState(() => {
@@ -57,7 +76,7 @@ export default function Analytics() {
         "Authorization": getAuthCookie() || ""
     };
 
-    const { data: chats, isLoading } = useSWR(
+    const { data: rawMessages, isLoading } = useSWR(
         ["analytics_chat_history", startDate, endDate],
         async ([_, start, end]) => {
             const params: { start?: string; end?: string } = {};
@@ -65,19 +84,53 @@ export default function Analytics() {
             if (end) params.end = (end as Dayjs).format('YYYY-MM-DD');
 
             const queryString = new URLSearchParams(params).toString();
-            const data = await fetcher(`/api/analytics/chat-history?${queryString}`, { headers });
+            const data = await fetcher(`/api/analytics/chat-dialogs?${queryString}`, { headers });
             
-            return data.map((chat: any) => ({
-                ...chat,
-                id: chat.id || chat.chat_id,
-                timestamp: new Date(chat.timestamp),
-                messages: chat.messages.map((message: any) => ({
-                    ...message,
-                    isBot: message.position % 2 == 1,
-                })),
-            }));
+            return data;
         }
     );
+
+    const dialogs: DialogItem[] = useMemo(() => {
+        if (!rawMessages) return [];
+        
+        const dialogsMap: Record<string, { user?: AnalyticsMessage, system?: AnalyticsMessage }> = {};
+        
+        rawMessages.forEach((message: AnalyticsMessage) => {
+            const msgId = message.msg_id;
+            if (!msgId) return;
+            
+            if (!dialogsMap[msgId]) {
+                dialogsMap[msgId] = {};
+            }
+            
+            if (message.msg_type === 'user') {
+                dialogsMap[msgId].user = message;
+            } else if (message.msg_type === 'system') {
+                dialogsMap[msgId].system = message;
+            }
+        });
+        
+        const result: DialogItem[] = [];
+        Object.entries(dialogsMap).forEach(([msgId, pair]) => {
+            if (pair.user) {
+                const dialog: DialogItem = {
+                    msg_id: msgId,
+                    chat_id: pair.user.chat_id,
+                    user_id: pair.user.user_id,
+                    flow_id: pair.user.flow_id,
+                    timestamp: pair.user.timestamp,
+                    user_message: pair.user,
+                    system_message: pair.system,
+                    has_error: pair.system?.error || false,
+                    feedback_type: pair.system?.feedback === 'thumbs_up' ? 'up' : 
+                                pair.system?.feedback === 'thumbs_down' ? 'down' : undefined
+                };
+                result.push(dialog);
+            }
+        });
+        
+        return result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    }, [rawMessages]);
 
     useEffect(() => {
         setAppSection?.('Analytics');
@@ -92,8 +145,8 @@ export default function Analytics() {
                             onChange={setStartDate}
                             slotProps={{
                                 textField: {
-                                size: 'small',
-                                sx: { width: '150px' }
+                                    size: 'small',
+                                    sx: { width: '150px' }
                                 }
                             }}
                         />
@@ -103,8 +156,8 @@ export default function Analytics() {
                             onChange={setEndDate}
                             slotProps={{
                                 textField: {
-                                size: 'small',
-                                sx: { width: '150px' }
+                                    size: 'small',
+                                    sx: { width: '150px' }
                                 }
                             }}
                         />
@@ -122,31 +175,28 @@ export default function Analytics() {
         return () => setHeaderToolbar?.(null);
     }, [setAppSection, setHeaderToolbar]);
 
-    useEffect(() => {
-        if (!chats) return;
+    const filteredDialogs = useMemo(() => {
+        if (!dialogs) return [];
 
-        const filtered = chats.filter((chat: Chat) => {
-            const chatDate = dayjs(chat.timestamp);
+        return dialogs.filter((dialog: DialogItem) => {
+            const dialogDate = dayjs(dialog.timestamp);
             if (startDate && endDate)
-                return chatDate.isBetween(startDate, endDate, 'day', '[]');
+                return dialogDate.isBetween(startDate, endDate, 'day', '[]');
             if (startDate)
-                return chatDate.isAfter(startDate) || chatDate.isSame(startDate, 'day');
+                return dialogDate.isAfter(startDate) || dialogDate.isSame(startDate, 'day');
             if (endDate) 
-                return chatDate.isBefore(endDate) || chatDate.isSame(endDate, 'day');
+                return dialogDate.isBefore(endDate) || dialogDate.isSame(endDate, 'day');
             return true;
         });
+    }, [dialogs, startDate, endDate]);
 
-        setFilteredChats(filtered);
+    useEffect(() => {
+        setFilteredDialogsState(filteredDialogs);
         setPage(1);
-    }, [chats, startDate, endDate]);
+    }, [filteredDialogs]);
 
-    const paginatedChats = filteredChats
-        .slice((page - 1) * itemsPerPage, page * itemsPerPage)
-        .sort((a, b) => {
-            return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-        });
-    const groupedChats = groupChatsByDate(paginatedChats);
-    const pagesNum = Math.ceil(filteredChats.length / itemsPerPage);
+    const paginatedDialogs = filteredDialogsState.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+    const pagesNum = Math.ceil(filteredDialogsState.length / itemsPerPage);
 
     return (
         <div className="space-y-4 flex flex-col pt-24 pb-10 min-h-screen -mt-14 items-center">
@@ -182,8 +232,7 @@ export default function Analytics() {
             <CustomTabPanel value={tabValue} index={1}>
                 <ChatHistory
                     isLoading={isLoading}
-                    filteredChats={filteredChats}
-                    groupedChats={groupedChats}
+                    dialogs={paginatedDialogs}
                     pagesNum={pagesNum}
                     page={page}
                     flows={flows || []}
