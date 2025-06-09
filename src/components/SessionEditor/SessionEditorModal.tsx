@@ -52,6 +52,13 @@ export default function SessionEditorModal({}: SessionEditorModalProps) {
     };
   }, [selectedChat]);
 
+  // Auto-select flow if there's only one option available
+  useEffect(() => {
+    if (isSessionEditorOpen && flows && flows.length === 1 && !draftFlow) {
+      handleFlowChange(flows[0].id);
+    }
+  }, [flows, isSessionEditorOpen, draftFlow]);
+
   const handleFlowChange = (flowId: string) => {
     const flow = flows?.find((flow) => flow.id === flowId) ?? null;
     if (flow) {
