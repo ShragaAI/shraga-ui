@@ -14,9 +14,10 @@ export interface RetrievalResult {
 }
 
 export interface Message {
-  msg_type: string;
+  msg_id?: string;
+  msg_type: 'user' | 'system' | 'feedback';
   text?: string;
-  payload: any;
+  payload?: any;
   retrieval_results?: RetrievalResult[];
   trace?: Record<string, any>;
   error?: boolean;

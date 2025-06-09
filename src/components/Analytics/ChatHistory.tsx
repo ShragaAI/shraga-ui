@@ -1,17 +1,32 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Chat as ChatType, Feedback, Message } from "../../contexts/AppContext";
-import { useChatContext } from "../../contexts/ChatContext";
-import useChatMessages from '../../hooks/useChatMessages';
-
-import { CircularProgress } from "@mui/material";
-import Pagination from '@mui/material/Pagination';
+import React, { useEffect, useRef, useState } from 'react';
+import { 
+    Accordion, 
+    AccordionSummary, 
+    AccordionDetails, 
+    CircularProgress, 
+    Pagination, 
+    Button,
+    Dialog,
+    Typography,
+    Chip
+} from "@mui/material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
 import ThumbDownOffAlt from '@mui/icons-material/ThumbDownOffAlt';
+import { green, red } from '@mui/material/colors';
+
+import { DialogItem } from './Analytics';
+import { useComponents } from "../../contexts/ComponentContext";
+import useChatMessages from '../../hooks/useChatMessages';
+import { groupDialogsByDate } from "../../utils/formatChatsDate.ts";
+import Chat from "../Chat/Chat";
+import { ChatMessage } from '../Chat/ChatMessage';
+import PayloadViewer from "../Chat/PayloadViewer";
+import JSONViewer from "../Chat/JSONViewer";
 
 interface ChatHistoryProps {
     isLoading: boolean;
-    filteredChats: ChatType[];
-    groupedChats: Record<string, ChatType[]>;
+    dialogs: DialogItem[];
     pagesNum: number;
     page: number;
     flows: any[];
@@ -20,261 +35,311 @@ interface ChatHistoryProps {
 
 export const ChatHistory = ({
     isLoading,
-    filteredChats,
-    groupedChats,
+    dialogs,
     pagesNum,
     page,
     flows,
     changePage,
-} : ChatHistoryProps) => {
-    const { ChatComponent } = useChatContext();
-    const [isSliderOpen, setIsSliderOpen] = useState(false);
-    const [shouldAnimate, setShouldAnimate] = useState(false);
-    const [selectedChatPosition, setSelectedChatPosition] = useState(0);
-    const [arrowPosition, setArrowPosition] = useState(0);
-    const [isPanelReady, setIsPanelReady] = useState(false);
+}: ChatHistoryProps) => {
+    const { ChatComponent } = useComponents();
+    const [expandedAccordion, setExpandedAccordion] = useState<string | false>(false);
+    const [popoverOpen, setPopoverOpen] = useState(false); 
     const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-    const [selectedChatBase, setSelectedChatBase] = useState<ChatType | null>(null);
-    const [fullChatData, setFullChatData] = useState<ChatType | null>(null);
-    const chatListRef = useRef<HTMLDivElement>(null);
-    const chatPanelRef = useRef<HTMLDivElement>(null);
-    const previousChatRef = useRef<string | null>(null);
-    const selectedChatRef = useRef<HTMLLIElement | null>(null);
+    const listTopRef = useRef<HTMLDivElement>(null);
 
-    const { data: chatMessages, isLoading: isChatMessagesLoading } = useChatMessages(selectedChatId);
+    const ActiveChatComponent = ChatComponent || Chat;
+    const MessageComponent = (ChatComponent as any)?.ChatMessage || ChatMessage;
 
-    useEffect(() => {
-        if (!selectedChatBase || !chatMessages) return;
-        setFullChatData({
-            ...selectedChatBase,
-            messages: chatMessages
-        });
-    }, [chatMessages, selectedChatBase]);
+    const [trace, setTrace] = useState<Record<string, any> | null>(null);
+    const [payload, setPayload] = useState<any>(null);
 
-    const countFeedback = (messages: Message[]) => {
-        if (!messages) return { thumbsUp: 0, thumbsDown: 0 };
+    const [messageStates, setMessageStates] = useState<{
+        [key: string]: {
+            copied: boolean;
+            expandedReferences: boolean;
+        }
+    }>({});
+    
+    const { data: fullChatMessages, isLoading: isFullChatLoading } = useChatMessages(
+        selectedChatId && popoverOpen ? selectedChatId : null
+    );
 
-        return messages.reduce((acc, message) => {
-            if (message.feedback === Feedback.THUMBS_UP) {
-                acc.thumbsUp++;
-            } else if (message.feedback === Feedback.THUMBS_DOWN) {
-                acc.thumbsDown++;
-            }
-            return acc;
-        }, { thumbsUp: 0, thumbsDown: 0 });
+    const handleMessageCopy = (messageId: string, copied: boolean) => {
+        setMessageStates(prev => ({
+            ...prev,
+            [messageId]: { ...prev[messageId], copied }
+        }));
+        
+        if (copied) {
+            setTimeout(() => {
+                setMessageStates(prev => ({
+                    ...prev,
+                    [messageId]: { ...prev[messageId], copied: false }
+                }));
+            }, 3000);
+        }
     };
 
-    const closeChatPanel = () => {
-        setIsSliderOpen(false);
-        setShouldAnimate(true);
-        previousChatRef.current = null;
+    const handleReferenceToggle = (messageId: string) => {
+        setMessageStates(prev => ({
+            ...prev,
+            [messageId]: { 
+                ...prev[messageId], 
+                expandedReferences: !prev[messageId]?.expandedReferences 
+            }
+        }));
+    };
+
+    useEffect(() => {
+        if (listTopRef.current) {
+            listTopRef.current.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+    }, [page]);
+
+    const handleAccordionChange = (dialogId: string) => (_: React.SyntheticEvent, isExpanded: boolean) => {
+        setExpandedAccordion(isExpanded ? dialogId : false);
+    };
+
+    const handleViewFullConversation = (chatId: string) => {
+        setSelectedChatId(chatId);
+        setPopoverOpen(true);
+    };
+
+    const handleClosePopover = () => {
+        setPopoverOpen(false);
         setSelectedChatId(null);
     };
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            const isClickInChatList = chatPanelRef.current?.contains(target);
-            const isChatItemClick = target.closest('li');
-            
-            if (isSliderOpen && !isChatItemClick && !isClickInChatList) {
-                closeChatPanel();
-            }
-        };
-
-        const updatePosition = () => {
-            const listElement = chatListRef.current;
-            if (isSliderOpen && chatPanelRef.current && listElement) {
-                const selectedChatElement = document.querySelector(`[data-selected="true"]`) as HTMLElement;
-                if (selectedChatElement && chatPanelRef.current) {
-                    const chatRect = selectedChatElement.getBoundingClientRect();
-                    const listRect = listElement.getBoundingClientRect();
-                    const position = calculatePanelPosition(chatRect, listRect);
-                    setSelectedChatPosition(position);
-                    const arrowPosition = calculateArrowPosition(chatRect, listRect, position);
-                    setArrowPosition(arrowPosition);
-                }
-            }
-        };
-
-        const timeout = setTimeout(updatePosition, 300);
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            clearTimeout(timeout);
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isSliderOpen]);
-
-    const calculatePanelPosition = (chatRect: DOMRect, listRect: DOMRect) => {
-        const panelHeight = chatPanelRef.current?.getBoundingClientRect().height || 0;
-        const relativeTop = chatRect.top - listRect.top;
-        const availableHeight = listRect.height;
-        let position = relativeTop - 100;
-
-        if (position + panelHeight > availableHeight) {
-            position = availableHeight - panelHeight - 20;
+    const getBackgroundColor = (dialog: DialogItem) => {
+        if (dialog.has_error || !dialog.system_message) {
+            return '!bg-yellow-50/80 dark:!bg-yellow-900/10';
         }
-
-        if (position < 0) {
-            position = 0;
-        }
-
-        return position;
-    };
-    
-    const calculateArrowPosition = (chatRect: DOMRect, listRect: DOMRect, panelPosition: number) => {
-        const relativeTop = chatRect.top - listRect.top;
-        return relativeTop - panelPosition + (chatRect.height / 2) - 30;
+        return '!bg-green-50/80 dark:!bg-green-900/10';
     };
 
-    const handleChatPopoverOpen = (event: React.MouseEvent<HTMLLIElement>, chatItem: ChatType) => {
-        if (chatItem.id === previousChatRef.current) {
-            closeChatPanel();
-            return;
-        }
-
-        const listElement = chatListRef.current;
-        if (!listElement) return;
-
-        const chatElement = event.currentTarget;
-        selectedChatRef.current = chatElement;
-
-        setIsPanelReady(false);
-        setSelectedChatId(chatItem.id);
-        setSelectedChatBase(chatItem);
-        setFullChatData(null);
-
-        if (!isSliderOpen) {
-            setShouldAnimate(true);
-            setIsSliderOpen(true);
-        } else if (previousChatRef.current !== chatItem.id) {
-            setShouldAnimate(false);
-        }
-        
-        previousChatRef.current = chatItem.id;
-
-        setTimeout(() => {
-            const chatRect = chatElement.getBoundingClientRect();
-            const listRect = listElement.getBoundingClientRect();
-            const position = calculatePanelPosition(chatRect, listRect);
-            setSelectedChatPosition(position);
-            const arrowPosition = calculateArrowPosition(chatRect, listRect, position);
-            setArrowPosition(arrowPosition);
-
-            setIsPanelReady(true);
-        }, 0);
+    const formatDate = (timestamp: string) => {
+        return new Date(timestamp).toLocaleString();
     };
+
+    const getFlowName = (flowId?: string) => {
+        const flow = flows?.find(f => f.id === flowId);
+        return flow?.description || flow?.id || 'Unknown Flow';
+    };
+
+    const groupedDialogs = groupDialogsByDate(dialogs);
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <CircularProgress />
+            </div>
+        );
+    }
+
+    if (dialogs.length === 0) {
+        return (
+            <div className="text-center p-8">
+                <Typography variant="h6" color="textSecondary">
+                    No dialog history found
+                </Typography>
+            </div>
+        );
+    }
 
     return (
-        <div ref={chatListRef} className="flex relative w-full overflow-hidden">
-            <div 
-                className={`p-6 rounded-lg bg-white w-full grow space-y-6 dark:bg-primary-dk min-w-[768px] max-w-[768px] ${
-                    shouldAnimate ? "transition-all duration-300 ease-in-out" : ""
-                } ${isSliderOpen ? "mr-[36vw]" : ""}`}
-            >
-                <div className="flex flex-col space-y-0.5">
-                    {!isLoading ? (
-                        <>
-                            {filteredChats.length > 0 ? (
-                                <>
-                                    {Object.entries(groupedChats).map(([groupTitle, groupList]) => (
-                                        <ul key={groupTitle} className="flex flex-col gap-3">
-                                            <div className="capitalize mt-6 mb-2 font-semibold text-sm px-2 py-2 bg-primary-lt rounded-md dark:bg-primary-dk">
-                                                {groupTitle}
-                                            </div>
-                                            {groupList.map((chatItem: ChatType) => {
-                                                const flow = flows?.find(f => f.id === chatItem.flow_id);
-                                                const feedback = countFeedback(chatItem.messages);
-                                                return (
-                                                    <li
-                                                        key={chatItem.id}
-                                                        className="flex gap-4 justify-between w-full py-4 px-4 rounded-lg border border-light-stone dark:border-light-stone/50 cursor-pointer hover:bg-primary-lt dark:hover:bg-opacity-10"
-                                                        onClick={(event) => handleChatPopoverOpen(event, chatItem)}
-                                                    >
-                                                        <div className="flex-col w-full space-y-2">
-                                                            <div className="text-base font-semibold line-clamp-2 min-h-[2rem]">
-                                                                {chatItem.messages?.[0]?.text || "Question"}
-                                                            </div>
-                                                            <div className="flex gap-4 justify-between text-sm">
-                                                                <div className="line-clamp-1 text-gray-500">
-                                                                    {flow?.description || ""} [{chatItem.id.slice(0, 5)}]
-                                                                </div>
-                                                                <div className="flex-grow">
-                                                                    {chatItem.timestamp.toUTCString()}
-                                                                </div>
-                                                                <div className="flex gap-3 text-xs">
-                                                                    <div>
-                                                                        <ThumbUpOffAltIcon fontSize="small" className="cursor-pointer" /> {feedback.thumbsUp}
-                                                                    </div>
-                                                                    <div>
-                                                                        <ThumbDownOffAlt fontSize="small" className="cursor-pointer" /> {feedback.thumbsDown}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
-                                    ))}
-
-                                    {pagesNum > 1 && (
-                                        <div className="py-8 w-full flex justify-center">
-                                            <Pagination 
-                                                count={pagesNum} 
-                                                page={page}
-                                                variant="outlined" 
-                                                shape="rounded"
-                                                onChange={changePage}
+        <div className="relative p-6 rounded-lg bg-white dark:bg-primary-dk w-full max-w-[768px] space-y-6">
+            <div ref={listTopRef} className="absolute -top-4" />
+            
+            {Object.entries(groupedDialogs).map(([groupTitle, groupDialogs]) => (
+                <div key={groupTitle} className="space-y-3">
+                    <div className="capitalize font-semibold text-sm px-3 py-2 bg-primary-lt rounded-md dark:bg-primary-dk">
+                        {groupTitle}
+                    </div>
+                    
+                    {groupDialogs.map((dialog: DialogItem) => {
+                        const messageId = dialog.msg_id;
+                        const messageState = messageStates[messageId] || {};
+                        
+                        return (
+                            <Accordion
+                                key={messageId}
+                                expanded={expandedAccordion === messageId}
+                                onChange={handleAccordionChange(messageId)}
+                                className={`${getBackgroundColor(dialog)} !shadow-sm border border-light-stone dark:border-light-stone/50`}
+                            >
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    aria-controls={`${messageId}-content`}
+                                    id={`${messageId}-header`}
+                                    className="hover:bg-primary-lt/50 dark:hover:bg-opacity-10"
+                                    sx={{
+                                        '& .Mui-expanded': {
+                                            marginTop: '12px !important',
+                                            marginBottom: '12px !important'
+                                        },
+                                    }}
+                                >
+                                    <div className="flex-1 mr-4">
+                                        <div className="text-base font-semibold line-clamp-2">
+                                            {dialog.user_message.text || "Question"}
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            {dialog.user_id}
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-4 text-sm text-gray-500 mt-3">
+                                            <span>{formatDate(dialog.timestamp)}</span>
+                                            <Chip 
+                                                label={getFlowName(dialog.flow_id)}
+                                                size="small"
+                                                variant="outlined"
                                             />
+                                            
+                                            <div className="flex items-center gap-2 ml-2">
+                                                <ThumbUpOffAltIcon 
+                                                    sx={{ color: dialog.feedback_type && dialog.feedback_type === 'up' ? green[500] : 'inherit' }} 
+                                                />
+                                                <ThumbDownOffAlt 
+                                                    sx={{ color: dialog.feedback_type && dialog.feedback_type === 'down' ? red[500] : 'inherit' }} 
+                                                />
+                                            </div>
+                                            
+                                            {dialog.has_error && (
+                                                <Chip 
+                                                    label="Error"
+                                                    size="small"
+                                                    color="warning"
+                                                    variant="outlined"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                </AccordionSummary>
+                                
+                                <AccordionDetails className="pt-0 !bg-white dark:!bg-primary-dk">
+                                    {dialog.system_message ? (
+                                        <div>
+                                            <div className="border-t">
+                                                {MessageComponent ? (
+                                                    <div className="-ml-3 mt-2">
+                                                        <MessageComponent
+                                                            message={dialog.system_message}
+                                                            index={0}
+                                                            readOnly={true}
+                                                            onCopyStateChange={(_: number, copied: boolean) => handleMessageCopy(messageId, copied)}
+                                                            onTraceClick={setTrace}
+                                                            onPayloadClick={setPayload}
+                                                            onReferenceToggle={() => handleReferenceToggle(messageId)}
+                                                            expandedReferences={{ 0: messageState.expandedReferences || false }}
+                                                            copiedStates={{ 0: messageState.copied || false }}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-4 border rounded-lg">
+                                                        <p>{dialog.system_message.text}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            
+                                            <div className="flex justify-end pt-2 border-t">
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    onClick={() => handleViewFullConversation(dialog.chat_id)}
+                                                >
+                                                    View Full Conversation
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center text-gray-500 py-4">
+                                            {dialog.has_error ? 'An error occurred processing this message' : 'No response was generated for this message'}
                                         </div>
                                     )}
-                                </>
-                            ) : (
-                                <div>No chat history</div>
-                            )}
-                        </>
-                    ) : (
-                        <CircularProgress />
-                    )}
+                                </AccordionDetails>
+                            </Accordion>
+                        )
+                    })}
                 </div>
-            </div>
+            ))}
 
-            {selectedChatBase && (
-                <div 
-                    ref={chatPanelRef}
-                    style={{
-                        top: `${selectedChatPosition}px`
-                    }}
-                    className={`absolute right-0 w-[35vw] bg-white dark:bg-primary-dk rounded-lg shadow-md dark:shadow-gray-300/10 min-h-[190px] max-h-[75vh] flex flex-col ${
-                        shouldAnimate ? "transform transition-transform duration-300 ease-in-out" : ""
-                    } ${isSliderOpen ? "translate-x-0" : "translate-x-full"}
-                    ${!isPanelReady ? "opacity-0" : "opacity-100"}`}
-                >
-                    <div 
-                        style={{
-                            top: `${arrowPosition}px`
-                        }}
-                        className={`absolute -left-10 z-10 overflow-hidden w-10 h-16 transition-opacity duration-300 ease-in-out ${isSliderOpen ? "opacity-100" : "opacity-0"}`}
-                    >
-                        <div className="absolute left-5 top-2 w-10 h-10 bg-white dark:bg-primary-dk shadow-lg dark:shadow-gray-500/10 rotate-45" />
+            {pagesNum > 1 && (
+                <div className="py-8 w-full flex justify-center">
+                    <Pagination 
+                        count={pagesNum} 
+                        page={page}
+                        variant="outlined" 
+                        shape="rounded"
+                        onChange={changePage}
+                    />
+                </div>
+            )}
+
+            <Dialog
+                open={popoverOpen}
+                onClose={handleClosePopover}
+                maxWidth="md"
+                fullWidth
+                slotProps={{
+                    paper: {
+                        sx: {
+                            width: '80vw',
+                            maxWidth: '800px',
+                            height: '80vh',
+                            maxHeight: '600px',
+                            m: 2
+                        }
+                    }
+                }}
+            >
+                <div className="p-4 h-full flex flex-col">
+                    <div className="flex justify-between items-center mb-4 border-b pb-2">
+                        <Typography variant="h6">Full Conversation</Typography>
+                        <Button onClick={handleClosePopover} size="small">
+                            Close
+                        </Button>
                     </div>
-
-                    <div className="flex-1 p-6 min-h-0 overflow-y-auto">
-                        {isChatMessagesLoading ? (
+                    
+                    <div className="flex-1 overflow-y-auto">
+                        {isFullChatLoading ? (
                             <div className="flex h-full items-center justify-center">
-                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                                <CircularProgress />
                             </div>
-                        ) : (
-                            <ChatComponent 
+                        ) : fullChatMessages ? (
+                            <ActiveChatComponent 
                                 readOnly={true} 
-                                chatData={fullChatData || undefined}
+                                chatData={{
+                                    id: selectedChatId!,
+                                    chat_id: selectedChatId!,
+                                    timestamp: new Date(),
+                                    messages: fullChatMessages,
+                                    user_id: '',
+                                    flow_id: '',
+                                    flow: null as any
+                                }}
                             />
+                        ) : (
+                            <div className="text-center text-gray-500 py-8">
+                                No conversation data available
+                            </div>
                         )}
                     </div>
                 </div>
-            )}
+            </Dialog>
+
+            <JSONViewer
+                json={trace ?? {}}
+                open={!!trace}
+                onClose={() => setTrace(null)}
+            />
+            <PayloadViewer
+                payload={payload}
+                open={!!payload}
+                onClose={() => setPayload(null)}
+            />
         </div>
     );
 };

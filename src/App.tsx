@@ -9,7 +9,8 @@ import classNames from "classnames";
 import AppProvider, { useAppContext } from "./contexts/AppContext";
 import { useAuthContext } from "./contexts/AuthContext";
 import { useThemeContext } from "./contexts/ThemeContext";
-import ChatProvider, { useChatContext } from "./contexts/ChatContext";
+import ChatProvider from "./contexts/ChatContext";
+import { ComponentsProvider, useComponents } from "./contexts/ComponentContext";
 import { usePageAccess } from "./hooks/usePageAccess";
 
 import AnalyticsLayout from "./layouts/AnalyticsLayout";
@@ -21,6 +22,7 @@ import SessionModal from "./components/SessionEditor/SessionEditorModal";
 import SettingsModal from "./components/Settings/SettingsModal";
 import Sidebar from "./components/Sidebar";
 import LoadingScreen from "./components/Base/LoadingScreen";
+import Chat from "./components/Chat/Chat";
 import { CreateRootConfig } from "./CreateRoot";
 
 interface ProtectedRouteProps {
@@ -35,8 +37,10 @@ interface AppProps {
 
 const Layout = () => {
   const { configs, customConfig, isSidebarOpen, toggleSidebar } = useAppContext();
-  const { ChatComponent } = useChatContext();
+  const { ChatComponent } = useComponents();
   const { chatBackground, theme } = useThemeContext(); 
+
+  const ActiveChatComponent = ChatComponent || Chat; 
 
   const defaultFlow = configs?.default_flow;
   const sessionModal = configs?.list_flows || (Array.isArray(defaultFlow) && defaultFlow.length > 1) ? <SessionModal /> : null;
@@ -57,7 +61,7 @@ const Layout = () => {
           <div className="flex flex-1 justify-center px-2">
             <div className="w-full flex flex-col max-w-[768px]">
               <div className="flex-1 overflow-auto">
-                <ChatComponent />
+                <ActiveChatComponent />
               </div>
               <ChatInput />
             </div>
@@ -110,9 +114,13 @@ function AppContent({ customChatComponent, config }: AppProps) {
     if (requiredAccess && !requiredAccess.every((access) => hasAccess[access as keyof typeof hasAccess])) {
       return <Navigate to="/" />;
     }
+
+    if (requiredAccess?.includes('analytics')) {
+      return children;
+    }
   
     return (
-      <ChatProvider customChatComponent={customChatComponent}>
+      <ChatProvider>
         {children}
       </ChatProvider>
     );
@@ -120,9 +128,11 @@ function AppContent({ customChatComponent, config }: AppProps) {
 
   const Protected = ({ children, requiredAccess }: ProtectedRouteProps) => (
     <AppProvider config={config}>
-      <CheckAccess requiredAccess={requiredAccess}>
-        {children}
-      </CheckAccess>
+      <ComponentsProvider chatComponent={customChatComponent}>
+        <CheckAccess requiredAccess={requiredAccess}>
+          {children}
+        </CheckAccess>
+      </ComponentsProvider>
     </AppProvider>
   );
 
