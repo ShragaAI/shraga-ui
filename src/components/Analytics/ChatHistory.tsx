@@ -131,8 +131,6 @@ export const ChatHistory = ({
 
     const groupedDialogs = groupDialogsByDate(dialogs);
 
-    console.log("flows:", flows);
-
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-64">
