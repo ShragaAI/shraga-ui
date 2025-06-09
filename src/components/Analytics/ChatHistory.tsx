@@ -6,7 +6,7 @@ import {
     CircularProgress, 
     Pagination, 
     Button,
-    Popover,
+    Dialog,
     Typography,
     Chip
 } from "@mui/material";
@@ -16,9 +16,10 @@ import ThumbDownOffAlt from '@mui/icons-material/ThumbDownOffAlt';
 import { green, red } from '@mui/material/colors';
 
 import { DialogItem } from './Analytics';
-import { useChatContext } from "../../contexts/ChatContext";
+import { useComponents } from "../../contexts/ComponentContext";
 import useChatMessages from '../../hooks/useChatMessages';
 import { groupDialogsByDate } from "../../utils/formatChatsDate.ts";
+import Chat from "../Chat/Chat";
 import { ChatMessage } from '../Chat/ChatMessage';
 import PayloadViewer from "../Chat/PayloadViewer";
 import JSONViewer from "../Chat/JSONViewer";
@@ -40,12 +41,13 @@ export const ChatHistory = ({
     flows,
     changePage,
 }: ChatHistoryProps) => {
-    const { ChatComponent } = useChatContext();
+    const { ChatComponent } = useComponents();
     const [expandedAccordion, setExpandedAccordion] = useState<string | false>(false);
-    const [popoverAnchor, setPopoverAnchor] = useState<HTMLButtonElement | null>(null);
+    const [popoverOpen, setPopoverOpen] = useState(false); 
     const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
     const listTopRef = useRef<HTMLDivElement>(null);
 
+    const ActiveChatComponent = ChatComponent || Chat;
     const MessageComponent = (ChatComponent as any)?.ChatMessage || ChatMessage;
 
     const [trace, setTrace] = useState<Record<string, any> | null>(null);
@@ -58,7 +60,9 @@ export const ChatHistory = ({
         }
     }>({});
     
-    const { data: fullChatMessages, isLoading: isFullChatLoading } = useChatMessages(selectedChatId);
+    const { data: fullChatMessages, isLoading: isFullChatLoading } = useChatMessages(
+        selectedChatId && popoverOpen ? selectedChatId : null
+    );
 
     const handleMessageCopy = (messageId: string, copied: boolean) => {
         setMessageStates(prev => ({
@@ -99,13 +103,13 @@ export const ChatHistory = ({
         setExpandedAccordion(isExpanded ? dialogId : false);
     };
 
-    const handleViewFullConversation = (event: React.MouseEvent<HTMLButtonElement>, chatId: string) => {
-        setPopoverAnchor(event.currentTarget);
+    const handleViewFullConversation = (chatId: string) => {
         setSelectedChatId(chatId);
+        setPopoverOpen(true);
     };
 
     const handleClosePopover = () => {
-        setPopoverAnchor(null);
+        setPopoverOpen(false);
         setSelectedChatId(null);
     };
 
@@ -126,6 +130,8 @@ export const ChatHistory = ({
     };
 
     const groupedDialogs = groupDialogsByDate(dialogs);
+
+    console.log("flows:", flows);
 
     if (isLoading) {
         return (
@@ -178,12 +184,15 @@ export const ChatHistory = ({
                                         },
                                     }}
                                 >
-                                    <div className="flex-1 space-y-2 mr-4">
-                                        <div className="text-base font-semibold line-clamp-2 min-h-[2rem]">
+                                    <div className="flex-1 mr-4">
+                                        <div className="text-base font-semibold line-clamp-2">
                                             {dialog.user_message.text || "Question"}
                                         </div>
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            {dialog.user_id}
+                                        </div>
                                         
-                                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                                        <div className="flex items-center gap-4 text-sm text-gray-500 mt-3">
                                             <span>{formatDate(dialog.timestamp)}</span>
                                             <Chip 
                                                 label={getFlowName(dialog.flow_id)}
@@ -217,7 +226,7 @@ export const ChatHistory = ({
                                         <div>
                                             <div className="border-t">
                                                 {MessageComponent ? (
-                                                    <div className="scale-95 origin-left -ml-3">
+                                                    <div className="-ml-3 mt-2">
                                                         <MessageComponent
                                                             message={dialog.system_message}
                                                             index={0}
@@ -241,7 +250,7 @@ export const ChatHistory = ({
                                                 <Button
                                                     variant="outlined"
                                                     size="small"
-                                                    onClick={(e) => handleViewFullConversation(e, dialog.chat_id)}
+                                                    onClick={() => handleViewFullConversation(dialog.chat_id)}
                                                 >
                                                     View Full Conversation
                                                 </Button>
@@ -271,24 +280,20 @@ export const ChatHistory = ({
                 </div>
             )}
 
-            <Popover
-                open={Boolean(popoverAnchor)}
-                anchorEl={popoverAnchor}
+            <Dialog
+                open={popoverOpen}
                 onClose={handleClosePopover}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'center',
-                }}
-                transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'center',
-                }}
-                PaperProps={{
-                    sx: {
-                        width: '80vw',
-                        maxWidth: '800px',
-                        height: '80vh',
-                        maxHeight: '600px'
+                maxWidth="md"
+                fullWidth
+                slotProps={{
+                    paper: {
+                        sx: {
+                            width: '80vw',
+                            maxWidth: '800px',
+                            height: '80vh',
+                            maxHeight: '600px',
+                            m: 2
+                        }
                     }
                 }}
             >
@@ -306,7 +311,7 @@ export const ChatHistory = ({
                                 <CircularProgress />
                             </div>
                         ) : fullChatMessages ? (
-                            <ChatComponent 
+                            <ActiveChatComponent 
                                 readOnly={true} 
                                 chatData={{
                                     id: selectedChatId!,
@@ -325,7 +330,7 @@ export const ChatHistory = ({
                         )}
                     </div>
                 </div>
-            </Popover>
+            </Dialog>
 
             <JSONViewer
                 json={trace ?? {}}

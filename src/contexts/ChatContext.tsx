@@ -10,21 +10,13 @@ import React, {
 import { KeyedMutator } from "swr";
 import { v4 as uuid } from "uuid";
 
-import Chat from "../components/Chat/Chat";
 import useChatHistory from "../hooks/useChatHistory";
 import useChatMessages from "../hooks/useChatMessages";
 import { getAuthCookie } from "../utils/auth";
 import useFetch from "../hooks/useFetch";
 import { useAppContext, transformPreferences, Flow, Chat as ChatType, Message, Feedback } from "./AppContext";
 
-interface ChatComponentProps {
-    readOnly?: boolean;
-    chatData?: ChatType;
-    [key: string]: any;
-}
-
 interface ChatContextType {
-  ChatComponent: React.ComponentType<ChatComponentProps>;
   selectedChat: ChatType | null;
   canReplyToBot: boolean;
   selectChat: (chatId: string) => void;
@@ -57,7 +49,6 @@ interface ChatContextType {
 }
 
 const defaultContext: ChatContextType = {
-  ChatComponent: Chat,
   selectedChat: null,
   canReplyToBot: false,
   selectChat: () => {},
@@ -78,15 +69,12 @@ export const useChatContext = () => useContext(ChatContext);
 
 interface ChatProviderProps {
   children: React.ReactNode;
-  customChatComponent?: React.ComponentType<ChatComponentProps>;
 }
 
-export const ChatProvider: React.FC<ChatProviderProps> = ({ 
-  children, 
-  customChatComponent 
-}) => {
+export const ChatProvider = ({ 
+  children
+}: ChatProviderProps) => {
   const { configs, flows, setIsSessionEditorOpen } = useAppContext();
-  const ChatComponent = customChatComponent || Chat;
 
   const { data: chatHistory, mutate: refreshChatHistory } = useChatHistory();
   const { fetchWithTimeout } = useFetch();
@@ -416,7 +404,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   
   return (
     <ChatContext.Provider value={{ 
-      ChatComponent,
       selectedChat,
       canReplyToBot,
       selectChat,
