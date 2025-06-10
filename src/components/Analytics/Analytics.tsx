@@ -79,7 +79,7 @@ export default function Analytics() {
             if (end) params.end = (end as Dayjs).format('YYYY-MM-DD');
 
             const queryString = new URLSearchParams(params).toString();
-            const data = await fetcher(`/api/analytics/chat-history?${queryString}`);
+            const data = await fetcher(`/api/analytics/chat-dialogs?${queryString}`);
             
             return data;
         }
