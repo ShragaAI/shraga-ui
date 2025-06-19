@@ -143,7 +143,6 @@ export const ChatProvider = ({
     if (defaultFlowId) {
       const flow = flows.find((flow) => flow.id === defaultFlowId);
       if (flow) {
-        flow.preferences = transformPreferences(flow.preferences);
         createChat(flow);
         return;
       }
