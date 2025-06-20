@@ -80,6 +80,7 @@ export type Chat = {
   flow: Flow;
   flow_id?: string;
   timestamp: Date;
+  preferences?: Record<string, any>;
   messages: Message[];
 };
 
