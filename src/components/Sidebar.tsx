@@ -35,7 +35,23 @@ export default function Sidebar({
 
       if (Array.isArray(defaultFlow) && defaultFlow.length > 1) {
         setIsSessionEditorOpen(true);
-      } else {
+      } else if (chats.length > 0 && flows) {
+        const startFlow: Flow = {
+          id: chats[0].flow.id,
+          description: "",
+        };
+
+        if (chats[0].preferences) {
+          startFlow.preferences = chats[0].preferences;
+        } else {
+          const flow = flows.find((flow) => flow.id === startFlow.id);
+          if (flow) {
+            startFlow.preferences = transformPreferences(flow.preferences);
+          }
+        }
+
+        createChat(startFlow);
+      } else if (defaultFlow !== undefined) {
         const flowId = Array.isArray(defaultFlow)
           ? defaultFlow[0]
           : defaultFlow || "default";
@@ -55,6 +71,7 @@ export default function Sidebar({
     }
   };
 
+  // auto select chat if chatId is provided in query params
   useEffect(() => {
     if (!chatId || !chats || !chats.length) return;
 

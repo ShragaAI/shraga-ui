@@ -31,6 +31,7 @@ export default function useChatHistory() {
             id: chat.messages[0]?.flow_id ?? "n/a",
           },
           timestamp: new Date(chat.timestamp),
+          preferences: chat.messages[0]?.preferences,
           messages: chat.messages.map((message: any) => ({
             ...message,
             retrieval_results: message.retrieval_results,
