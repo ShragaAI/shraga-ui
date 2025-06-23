@@ -275,7 +275,7 @@ export const ChatProvider = ({
         body: JSON.stringify({
           question: text,
           flow_id: selectedChat.flow.id,
-          preferences: selectedChat.flow.preferences ?? {},
+          preferences: selectedChat.preferences ?? {},
           chat_id: selectedChat.id,
           position: (latestMessage && latestMessage.position) ? latestMessage.position + 1 : 0,
           chat_history: selectedChat.messages.map((m) => {
