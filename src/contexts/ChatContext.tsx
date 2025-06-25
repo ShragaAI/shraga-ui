@@ -95,7 +95,7 @@ export const ChatProvider = ({
   const selectedChat = useMemo<ChatType | null>(
     () => {
       const chat = chats.find((c) => c.id === selectedChatId) ?? null;
-      if (chat && flows) {
+      if (chat && flows && chat.preferences === undefined) {
         const flow = flows.find((f) => f.id === chat.flow.id);
         if (flow) {
           return {
@@ -125,10 +125,16 @@ export const ChatProvider = ({
         description: "",
       };
 
-      const flow = flows.find((flow) => flow.id === startFlow.id);
-      if (flow) {
-        startFlow.preferences = transformPreferences(flow.preferences);
+      if (chatHistory[0].preferences) {
+        startFlow.preferences = chatHistory[0].preferences;
+      } else { // if no preferences in last chat, use flow default preferences
+        const flow = flows.find((flow) => flow.id === startFlow.id);
+        if (flow) {
+          const preferences = transformPreferences(flow.preferences);
+          startFlow.preferences = preferences;
+        }
       }
+
       createChat(startFlow);
       return;
     }
@@ -143,7 +149,6 @@ export const ChatProvider = ({
     if (defaultFlowId) {
       const flow = flows.find((flow) => flow.id === defaultFlowId);
       if (flow) {
-        flow.preferences = transformPreferences(flow.preferences);
         createChat(flow);
         return;
       }
@@ -200,6 +205,7 @@ export const ChatProvider = ({
       flow_id: flow.id,
       messages: [],
       timestamp: new Date(),
+      preferences: flow.preferences,
     };
     setChats(chats => [chat, ...chats]);
     setSelectedChatId(chat.id);
@@ -255,10 +261,9 @@ export const ChatProvider = ({
 
     try {
       _addMessageToChat(currentChatId, { text, msg_type: "user", rtl });
-      const chat = chats.find((c) => c.id === currentChatId);
-      if (!chat) return;
+      if (!selectedChat) return;
 
-      const latestMessage = chat.messages[chat.messages.length - 1];
+      const latestMessage = selectedChat.messages[selectedChat.messages.length - 1];
       const res = await fetchWithTimeout("/api/flows/run", {
         method: "POST",
         headers: {
@@ -269,11 +274,11 @@ export const ChatProvider = ({
         },
         body: JSON.stringify({
           question: text,
-          flow_id: chat.flow.id,
-          preferences: chat.flow.preferences ?? {},
-          chat_id: chat.id,
+          flow_id: selectedChat.flow.id,
+          preferences: selectedChat.preferences ?? {},
+          chat_id: selectedChat.id,
           position: (latestMessage && latestMessage.position) ? latestMessage.position + 1 : 0,
-          chat_history: chat.messages.map((m) => {
+          chat_history: selectedChat.messages.map((m) => {
             return {
               timestamp: m.timestamp,
               text: m.text,
